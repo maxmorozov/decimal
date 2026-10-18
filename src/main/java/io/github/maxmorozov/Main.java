@@ -29,6 +29,10 @@ public class Main {
         testDecimal(false, 9_999_999_999_999_999L, -2);
         testDecimal(false, 9007199254740993L, 0);
 
+        System.out.println("\n17 digits for decimal mantissa");
+        testDecimal(0.14285714285714285);
+        testDecimal64(0.14285714285714285);
+
         System.out.println("\nPaxon test w*2^q");
         Paxon.testPaxsonDouble(Main::testDecimal);
 
@@ -50,12 +54,15 @@ public class Main {
     }
 
     private static void testDecimal64(long decimal) {
-        System.out.printf("%X -> %s%dE%d -> %s\n",
+        double d = Decimal64Converter.toDouble(decimal);
+        System.out.printf("%X -> %s%dE%d -> %s, range=[%s,%s]\n",
                 decimal,
                 Decimal64.isNegative(decimal) ? "-" : "",
                 Decimal64.significand(decimal),
                 Decimal64.exponent(decimal),
-                Decimal64Converter.toDouble(decimal));
+                d,
+                Math.nextDown(d),
+                Math.nextUp(d));
     }
 
     private static void testDecimal(boolean negative, long significand, int exponent) {
