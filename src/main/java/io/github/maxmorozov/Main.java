@@ -70,7 +70,7 @@ public class Main {
                 decimal.significand(),
                 decimal.exponent(),
                 d,
-                Math.nextUp(d),
-                Math.nextDown(d));
+                Math.nextDown(d),
+                Math.nextUp(d));
     }
 }

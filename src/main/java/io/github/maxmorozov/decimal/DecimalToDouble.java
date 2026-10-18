@@ -2,6 +2,9 @@ package io.github.maxmorozov.decimal;
 
 /**
  * Implements decimal to double conversion with correct rounding.
+ * <p/>
+ * Based on <a href="https://github.com/fastfloat/fast_float/blob/main/include/fast_float/decimal_to_binary.h">
+ * fast_float::compute_float()</a>
  */
 public class DecimalToDouble {
     // When mapping numbers from decimal to binary,
@@ -43,9 +46,45 @@ public class DecimalToDouble {
     private static final int bit_precision = mantissa_explicit_bits + 3;
     private static final long precision_mask = 0xFFFFFFFFFFFFFFFFL >>> bit_precision;
 
+    // fast path
+    private static final double[] double_powers_of_ten = {
+            1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11,
+            1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
+    };
+    // Largest integer n such that every integer in [0; n] is exactly representable as double (2^53).
+    private static final long max_mantissa_fast_path = 2L << mantissa_explicit_bits;
+
+    // Largest k such that 10^k is exactly representable as double (5^22 < 2^53 < 5^23).
+    private static final int max_exp_fast_path = 22;
 
     /**
-     * Eisel-Lemire: correctly rounded w * 10^q -> double (w in [0; 2^63), q any).
+     * Correctly rounded  {@code +-w * 10^q} -> {@code double} (w in [0; 2^63), q any)
+     *
+     * @param negative indicates the sign of the number
+     * @param sig      significand of the decimal number
+     * @param exp      exponent of the decimal number
+     * @return double value
+     */
+    public static double asDouble(boolean negative, long sig, int exp) {
+        double v;
+        // We start with a fast path
+        // It was described in Clinger WD.
+        // How to read floating point numbers accurately.
+        // ACM SIGPLAN Notices. 1990
+        if (sig <= max_mantissa_fast_path && exp >= -max_exp_fast_path && exp <= max_exp_fast_path) {
+            // Fast path (Clinger): both operands are exactly representable as
+            // double, so a single IEEE operation yields a correctly rounded result.
+            v = exp >= 0 ? (double) sig * double_powers_of_ten[exp]
+                    : (double) sig / double_powers_of_ten[-exp];
+        } else {
+            // General path: exact big-integer arithmetic, no strings.
+            v = compute_float(sig, exp);
+        }
+        return negative ? -v : v;
+    }
+
+    /**
+     * Eisel-Lemire: correctly rounded {@code w * 10^q} -> {@code double} (w in [0; 2^63), q any).
      * Port of fast_float::compute_float with the exact-tie (round-half-even) check.
      * <p>Reference:</p>
      * <lu>
@@ -56,7 +95,7 @@ public class DecimalToDouble {
      * @param w significand part of decimal value
      * @param q exponent of decimal value
      */
-    public static double compute_float(long w, int q) {
+    private static double compute_float(long w, int q) {
         if (w == 0 || q < smallest_power_of_five) {
             return 0.0;
         }

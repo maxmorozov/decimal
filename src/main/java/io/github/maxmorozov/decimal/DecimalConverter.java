@@ -2,12 +2,9 @@ package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.schubfach.Schubfach;
 
-public class DecimalConverter {
+import static io.github.maxmorozov.decimal.DecimalToDouble.asDouble;
 
-    private static final double[] DOUBLE_POW10 = {
-            1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
-            1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
-    };
+public class DecimalConverter {
 
     public static Decimal encode(double v) {
         DecimalEncoder encoder = new DecimalEncoder();
@@ -41,20 +38,6 @@ public class DecimalConverter {
             case Schubfach.Q_NAN, Schubfach.S_NAN -> Double.NaN;
             default -> throw new IllegalStateException("Unexpected type value: " + decimal.type());
         };
-    }
-
-    private static double asDouble(boolean negative, long sig, int exp) {
-        double v;
-        if (sig <= (1L << 53) && exp >= -22 && exp <= 22) {
-            // Fast path (Clinger): both operands are exactly representable as
-            // double, so a single IEEE operation yields a correctly rounded result.
-            v = exp >= 0 ? (double) sig * DOUBLE_POW10[exp]
-                    : (double) sig / DOUBLE_POW10[-exp];
-        } else {
-            // General path: exact big-integer arithmetic, no strings.
-            v = DecimalToDouble.compute_float(sig, exp);
-        }
-        return negative ? -v: v;
     }
 
 }
