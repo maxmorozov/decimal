@@ -32,6 +32,12 @@ public class Main {
         System.out.println("\n17 digits for decimal mantissa");
         testDecimal(0.14285714285714285);
         testDecimal64(0.14285714285714285);
+        testDecimal(0.3);
+        testDecimal(0.300000000000000044);
+        testDecimal(0.300000000000000099);
+        testDecimal64(0.3);
+        testDecimal64(0.300000000000000044);
+        testDecimal64(0.300000000000000099);
 
         System.out.println("\nPaxon test w*2^q");
         Paxon.testPaxsonDouble(Main::testDecimal);
