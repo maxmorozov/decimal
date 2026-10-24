@@ -20,12 +20,11 @@
  * THE SOFTWARE.
  */
 
-package io.github.maxmorozov;
+package io.github.maxmorozov.schubfach;
 
 
 import io.github.maxmorozov.decimal.Decimal;
 import io.github.maxmorozov.decimal.DecimalConverter;
-import io.github.maxmorozov.schubfach.Schubfach;
 
 import java.math.BigDecimal;
 import java.util.Random;

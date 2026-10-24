@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package io.github.maxmorozov;
+package io.github.maxmorozov.schubfach;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
