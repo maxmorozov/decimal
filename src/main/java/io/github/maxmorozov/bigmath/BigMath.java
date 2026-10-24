@@ -69,13 +69,19 @@ public class BigMath {
     private static long[] slowRound(int[] num, int exp, int precision, int minExp) {
         int[] den = new int[LIMBS];
         den[0] = 1;
-        if (exp >= 0) mulPow5(num, exp);
-        else mulPow5(den, -exp);
+        if (exp >= 0) {
+            mulPow5(num, exp);
+        } else {
+            mulPow5(den, -exp);
+        }
 
         // Scale so that 2^54 <= num/den < 2^56  (quotient has 55 or 56 bits)
         int s = 55 - (bitLength(num) - bitLength(den));
-        if (s >= 0) shl(num, s);
-        else shl(den, -s);
+        if (s >= 0) {
+            shl(num, s);
+        } else {
+            shl(den, -s);
+        }
         // value = (num/den) * 2^(exp - s)
 
         // Binary long division: q = floor(num / den), num = remainder
