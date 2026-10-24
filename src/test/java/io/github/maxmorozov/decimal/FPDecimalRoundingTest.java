@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Проверяет FPDecimal.toDouble()/toFloat() на значениях W * 10^-9 против двух независимых эталонов:
@@ -179,6 +180,18 @@ class FPDecimalRoundingTest {
         assertEquals(0x1p44 + 0x1p-7, new FPDecimal(false, 17592186044416L, 5_859_376).toDouble());
         // знак
         assertEquals(-0x1p44, new FPDecimal(true, 17592186044416L, 1_953_125).toDouble());
+    }
+
+    @Test
+    void normalizationInvariants() {
+        BigInteger d = BigInteger.valueOf(1_953_125L);
+        BigInteger wMin = BigInteger.ONE.shiftLeft(75);            // W' минимальное
+        BigInteger wMax = BigInteger.ONE.shiftLeft(76).subtract(BigInteger.ONE);
+        assertEquals(55, wMin.divide(d).bitLength());
+        assertEquals(56, wMax.divide(d).bitLength());
+        // intermediate
+        assertTrue(BigInteger.ONE.shiftLeft(44).bitLength() <= 63);
+        assertTrue(d.shiftLeft(32).bitLength() <= 63);             // cur2 < D * 2^32
     }
 
     // ------------------------------------------------------------------ helpers
