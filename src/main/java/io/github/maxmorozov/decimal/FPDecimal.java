@@ -1,7 +1,5 @@
 package io.github.maxmorozov.decimal;
 
-import io.github.maxmorozov.bigmath.BigMath;
-
 /**
  * Fixed-point decimal with 9 fractional digits:
  * value = (-1)^negative * (units + nanos / 10^9),  units >= 0,  0 <= nanos < 10^9.
@@ -11,7 +9,9 @@ import io.github.maxmorozov.bigmath.BigMath;
  */
 public record FPDecimal(boolean negative, long units, int nanos) {
 
-    public static final int NANOS_PER_UNIT = 1_000_000_000;
+    private static final int NANOS_PER_UNIT = 1_000_000_000;
+
+    private static final long D5_9 = 1_953_125L;   // 5^9, 2^20 < D < 2^21
 
     public FPDecimal {
         if (units < 0) {
@@ -46,18 +46,7 @@ public record FPDecimal(boolean negative, long units, int nanos) {
         } else {
             // W has 65..93 bits: keep the top 64 bits (w), remember the dropped ones (sticky).
             // W = w * 2^s + r,  0 <= r < 2^s  =>  value lies in [w; w+1] * 2^s * 10^-9.
-            int s = 64 - Long.numberOfLeadingZeros(hi);
-            long w = (hi << (64 - s)) | (lo >>> s);
-            boolean sticky = (lo & ((1L << s) - 1)) != 0;
-            double a = DecimalToDouble.compute_float(w, -9);
-            if (!sticky) {
-                v = Math.scalb(a, s);                          // exact: no overflow/underflow possible
-            } else if (w != -1L && a == DecimalToDouble.compute_float(w + 1, -9)) {
-                v = Math.scalb(a, s);                          // both ends round alike -> so does everything between
-            } else {
-                //System.out.printf("%019d.%09d%n", units, nanos);
-                v = BigMath.toDoubleSlow(hi, lo, -9);        // rare (~2^-11): exact fallback
-            }
+            v = toDoubleNanosHi(hi, lo);
         }
         return negative ? -v : v;
     }
@@ -80,18 +69,140 @@ public record FPDecimal(boolean negative, long units, int nanos) {
                 v = DecimalToFloat.compute_float(lo, -9);
             }
         } else {
-            int s = 64 - Long.numberOfLeadingZeros(hi);
-            long w = (hi << (64 - s)) | (lo >>> s);
-            boolean sticky = (lo & ((1L << s) - 1)) != 0;
-            float a = DecimalToFloat.compute_float(w, -9);
-            if (!sticky) {
-                v = Math.scalb(a, s);
-            } else if (w != -1L && a == DecimalToFloat.compute_float(w + 1, -9)) {
-                v = Math.scalb(a, s);
-            } else {
-                v = BigMath.toFloatSlow(hi, lo, -9);
-            }
+            v = toFloatNanosHi(hi, lo);
         }
         return negative ? -v : v;
+    }
+
+    /**
+     * (hi:lo, unsigned, non-zero) * 10^-9 -> double, with correct rounding.
+     */
+    public static double toDoubleNanos(long hi, long lo) {
+        return roundNanos(hi, lo, 53);
+    }
+
+    public static float toFloatNanos(long hi, long lo) {
+        // The result of roundNanos(.., 24) is m * 2^e, where m <= 2^24; therefore, the cast to float is exact.
+        return (float) roundNanos(hi, lo, 24);
+    }
+
+    private static double roundNanos(long hi, long lo, int precision) {
+        int bits = hi != 0 ? 128 - Long.numberOfLeadingZeros(hi)
+                : 64 - Long.numberOfLeadingZeros(lo);
+        int sh = bits - 76;                       // >0: shift to the right, <0: to the left
+        long h, l;
+        boolean sticky;
+        if (sh > 0) {
+            sticky = (lo & ((1L << sh) - 1)) != 0;
+            l = (lo >>> sh) | (hi << (64 - sh));
+            h = hi >>> sh;
+        } else if (sh == 0) {
+            h = hi;
+            l = lo;
+            sticky = false;
+        } else {
+            int k = -sh;                          // 1..22 for lo > 2^53
+            h = (hi << k) | (lo >>> (64 - k));
+            l = lo << k;
+            sticky = false;
+        }
+        // h < 2^12, so we compute (h:l) / D in two 32-bit steps.
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        r = cur - q0 * D5_9;
+        long q = (q1 << 32) | q0;                 // 55 or 56 bits
+        sticky |= r != 0;
+
+        int len = 64 - Long.numberOfLeadingZeros(q);
+        int drop = len - precision;               // 2..3 for double, 31..32 for float
+        long m = q >>> drop;
+        long rem = q & ((1L << drop) - 1);
+        long half = 1L << (drop - 1);
+        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) m++;
+
+        // value = (q + frac) * 2^(sh-9) = m * 2^(drop + sh - 9)
+        return Math.scalb((double) m, drop + sh - 9);
+    }
+
+    /**
+     * hi != 0. (hi:lo) * 10^-9 -> double, round-half-even.
+     */
+    public static double toDoubleNanosHi(long hi, long lo) {
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - 76;   // -11..17
+        long h, l;
+        boolean sticky;
+        if (sh > 0) {
+            sticky = (lo & ((1L << sh) - 1)) != 0;
+            l = (lo >>> sh) | (hi << (64 - sh));
+            h = hi >>> sh;
+        } else {
+            int k = -sh;                                       // 0..11
+            h = (hi << k) | ((lo >>> 1) >>> (63 - k));         // correct even when k == 0
+            l = lo << k;
+            sticky = false;
+        }
+
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        r = cur - q0 * D5_9;
+        long q = (q1 << 32) | q0;                              // 55 or 56 bits
+        sticky |= r != 0;
+
+        int drop = 2 + (int) (q >>> 55);                       // 2 or 3
+        long m = q >>> drop;
+        long rem = q & ((1L << drop) - 1);
+        long half = 1L << (drop - 1);
+        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) {
+            m++;
+        }
+
+        // value = m * 2^p, m in [2^52, 2^53]
+        int p = drop + sh - 9;
+        return Double.longBitsToDouble(((long) (p + 1074) << 52) + m);
+    }
+
+    /**
+     * The same for float: m in [2^23, 2^24], drop = 31 or 32.
+     */
+    public static float toFloatNanosHi(long hi, long lo) {
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - 76;   // -11..17
+        long h, l;
+        boolean sticky;
+        if (sh > 0) {
+            sticky = (lo & ((1L << sh) - 1)) != 0;
+            l = (lo >>> sh) | (hi << (64 - sh));
+            h = hi >>> sh;
+        } else {
+            int k = -sh;                                       // 0..11
+            h = (hi << k) | ((lo >>> 1) >>> (63 - k));         // correct even when k == 0
+            l = lo << k;
+            sticky = false;
+        }
+
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        r = cur - q0 * D5_9;
+        long q = (q1 << 32) | q0;                              // 55 or 56 bits
+        sticky |= r != 0;
+
+        int drop = 31 + (int) (q >>> 55);
+        long m = q >>> drop;
+        long rem = q & ((1L << drop) - 1);
+        long half = 1L << (drop - 1);
+        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) {
+            m++;
+        }
+
+        int p = drop + sh - 9;
+        return Float.intBitsToFloat((int) (((long) (p + 149) << 23) + m));
     }
 }
