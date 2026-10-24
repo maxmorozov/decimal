@@ -76,10 +76,37 @@ class FPDecimalRoundingTest {
     @Test
     void randomByBitLength() {
         Random rnd = new Random(SEED);
-        for (int bits = 54; bits <= 93; bits++) {
+        for (int bits = 25; bits <= 93; bits++) {
             for (int i = 0; i < PER_BIT_LENGTH; i++) {
                 check(new BigInteger(bits - 1, rnd).setBit(bits - 1));
             }
+        }
+    }
+
+    /**
+     * lo >= 2^63: потерянный при сдвиге на 1 бит превращает ничью в "чуть выше".
+     */
+    @Test
+    void floatLoStickyFromShift() {
+        Random rnd = new Random(SEED + 4);
+        for (int drop = 18; drop <= 19; drop++) {
+            for (long m : mantissas(rnd, 24)) {
+                BigInteger q = BigInteger.valueOf(m).shiftLeft(drop).or(pow2(drop - 1));
+                BigInteger w = q.multiply(D);                       // W' = 5^9 * q, 2^62 <= W' < 2^63
+                if (w.bitLength() != 63) continue;
+                check(w.shiftLeft(1).or(BigInteger.ONE));           // W = 2W' + 1, 64 бита, lo < 0
+                check(w.shiftLeft(1));                              // настоящая ничья
+                check(w.shiftLeft(1).subtract(BigInteger.ONE));     // чуть ниже
+            }
+        }
+    }
+
+    @Test
+    void loBoundaries() {
+        for (BigInteger w : new BigInteger[]{pow2(63).subtract(BigInteger.ONE), pow2(63),
+                pow2(63).add(BigInteger.ONE), pow2(62), pow2(62).subtract(BigInteger.ONE),
+                pow2(64).subtract(BigInteger.ONE)}) {
+            check(w);
         }
     }
 
@@ -185,13 +212,17 @@ class FPDecimalRoundingTest {
     @Test
     void normalizationInvariants() {
         BigInteger d = BigInteger.valueOf(1_953_125L);
-        BigInteger wMin = BigInteger.ONE.shiftLeft(75);            // W' минимальное
-        BigInteger wMax = BigInteger.ONE.shiftLeft(76).subtract(BigInteger.ONE);
-        assertEquals(55, wMin.divide(d).bitLength());
-        assertEquals(56, wMax.divide(d).bitLength());
-        // intermediate
-        assertTrue(BigInteger.ONE.shiftLeft(44).bitLength() <= 63);
-        assertTrue(d.shiftLeft(32).bitLength() <= 63);             // cur2 < D * 2^32
+        assertEquals(42, pow2(62).divide(d).bitLength());               // float lo: q = 42 бита ...
+        assertEquals(43, pow2(63).subtract(BigInteger.ONE).divide(d).bitLength());   // ... или 43
+
+        for (int[] c : new int[][]{{53, 75}, {24, 46}}) {        // {precision, N}, N = precision + 22
+            int precision = c[0], n = c[1];
+            BigInteger lo = BigInteger.ONE.shiftLeft(n - 1).divide(d);
+            BigInteger hi = BigInteger.ONE.shiftLeft(n).subtract(BigInteger.ONE).divide(d);
+            assertEquals(precision + 1, lo.bitLength());          // есть бит округления
+            assertEquals(precision + 2, hi.bitLength());          // длина q двузначна
+        }
+        assertTrue(BigInteger.ONE.shiftLeft(46).bitLength() <= 63);  // float: W' помещается в long
     }
 
     // ------------------------------------------------------------------ helpers

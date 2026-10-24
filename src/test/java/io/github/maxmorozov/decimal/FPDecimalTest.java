@@ -1,6 +1,7 @@
 package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.bigmath.BigMath;
+import io.github.maxmorozov.bigmath.FPRounding;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +9,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import static io.github.maxmorozov.bigmath.BigMath.toDoubleSlow;
-import static io.github.maxmorozov.decimal.FPDecimal.toDoubleNanosHi;
+import static io.github.maxmorozov.bigmath.FPRounding.toDoubleNanosHi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FPDecimalTest {
@@ -74,7 +75,7 @@ public class FPDecimalTest {
                     if (w[0] == 0) continue;                  // hi != 0 is required
                     assertEquals(
                             Float.floatToIntBits(BigMath.toFloatSlow(w[0], w[1], -9)),
-                            Float.floatToIntBits(FPDecimal.toFloatNanosHi(w[0], w[1])));
+                            Float.floatToIntBits(FPRounding.toFloatNanosHi(w[0], w[1])));
                 }
             }
         }

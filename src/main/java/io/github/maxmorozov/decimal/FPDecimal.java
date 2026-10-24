@@ -1,5 +1,7 @@
 package io.github.maxmorozov.decimal;
 
+import static io.github.maxmorozov.bigmath.FPRounding.*;
+
 /**
  * Fixed-point decimal with 9 fractional digits:
  * value = (-1)^negative * (units + nanos / 10^9),  units >= 0,  0 <= nanos < 10^9.
@@ -13,22 +15,6 @@ public record FPDecimal(boolean negative, long units, int nanos) {
 
     private static final long FAST_MAX_SIG_D = 1L << 53;   // integers up to 2^53 are exact in double
     private static final long FAST_MAX_SIG_F = 1L << 24;   // ... and up to 2^24 in float
-
-    // 10^9 = 2^9 * 5^9  =>  W * 10^-9 = (W / 5^9) * 2^-9
-    private static final long D5_9 = 1_953_125L;          // 5^9;  2^20 < D5_9 < 2^21 (log2 ~= 20.898)
-    private static final int NORM_BITS = 76;              // |W'| = 76 bits  =>  q = W'/D has 55 or 56 bits
-    private static final int EXP_SHIFT = 9;               // multiplier 2^-9
-    private static final int Q_MIN_BITS = 55;
-
-    private static final int MANTISSA_EXPLICIT_BITS_D = 52;
-    private static final int EXPONENT_OFFSET_D = 1023;
-    private static final int EXPONENT_SHIFT_D = EXPONENT_OFFSET_D + MANTISSA_EXPLICIT_BITS_D - 1;
-    private static final int MANTISSA_DROP_D = Q_MIN_BITS - MANTISSA_EXPLICIT_BITS_D - 1;
-
-    private static final int MANTISSA_EXPLICIT_BITS_F = 23;
-    private static final int EXPONENT_OFFSET_F = 127;
-    private static final int EXPONENT_SHIFT_F = EXPONENT_OFFSET_F + MANTISSA_EXPLICIT_BITS_F - 1;
-    private static final int MANTISSA_DROP_F = Q_MIN_BITS - MANTISSA_EXPLICIT_BITS_F - 1;
 
     public FPDecimal {
         if (units < 0) {
@@ -58,8 +44,7 @@ public record FPDecimal(boolean negative, long units, int nanos) {
                 v = DecimalToDouble.compute_float(lo, -9);   // W fits 64 bits: exact input
             }
         } else {
-            // W has 65..93 bits: keep the top 64 bits (w), remember the dropped ones (sticky).
-            // W = w * 2^s + r,  0 <= r < 2^s  =>  value lies in [w; w+1] * 2^s * 10^-9.
+            // W has 65..93 bits
             v = toDoubleNanosHi(hi, lo);
         }
         return negative ? -v : v;
@@ -80,7 +65,7 @@ public record FPDecimal(boolean negative, long units, int nanos) {
             if (Long.compareUnsigned(lo, FAST_MAX_SIG_F) <= 0) {
                 v = (float) lo / 1e9f;                         // 10^9 = 2^9 * 5^9 is exact in float
             } else {
-                v = DecimalToFloat.compute_float(lo, -9);
+                v = toFloatNanosLo(lo);
             }
         } else {
             v = toFloatNanosHi(hi, lo);
@@ -88,155 +73,4 @@ public record FPDecimal(boolean negative, long units, int nanos) {
         return negative ? -v : v;
     }
 
-    /**
-     * (hi:lo, unsigned, non-zero) * 10^-9 -> double, with correct rounding.
-     */
-    public static double toDoubleNanos(long hi, long lo) {
-        return roundNanos(hi, lo, 53);
-    }
-
-    public static float toFloatNanos(long hi, long lo) {
-        // The result of roundNanos(.., 24) is m * 2^e, where m <= 2^24; therefore, the cast to float is exact.
-        return (float) roundNanos(hi, lo, 24);
-    }
-
-    private static double roundNanos(long hi, long lo, int precision) {
-        int bits = hi != 0 ? 128 - Long.numberOfLeadingZeros(hi)
-                : 64 - Long.numberOfLeadingZeros(lo);
-        int sh = bits - 76;                       // >0: shift to the right, <0: to the left
-        long h, l;
-        boolean sticky;
-        if (sh > 0) {
-            sticky = (lo & ((1L << sh) - 1)) != 0;
-            l = (lo >>> sh) | (hi << (64 - sh));
-            h = hi >>> sh;
-        } else if (sh == 0) {
-            h = hi;
-            l = lo;
-            sticky = false;
-        } else {
-            int k = -sh;                          // 1..22 for lo > 2^53
-            h = (hi << k) | (lo >>> (64 - k));
-            l = lo << k;
-            sticky = false;
-        }
-        // h < 2^12, so we compute (h:l) / D in two 32-bit steps.
-        long cur = (h << 32) | (l >>> 32);
-        long q1 = cur / D5_9;
-        long r = cur - q1 * D5_9;
-        cur = (r << 32) | (l & 0xFFFFFFFFL);
-        long q0 = cur / D5_9;
-        r = cur - q0 * D5_9;
-        long q = (q1 << 32) | q0;                 // 55 or 56 bits
-        sticky |= r != 0;
-
-        int len = 64 - Long.numberOfLeadingZeros(q);
-        int drop = len - precision;               // 2..3 for double, 31..32 for float
-        long m = q >>> drop;
-        long rem = q & ((1L << drop) - 1);
-        long half = 1L << (drop - 1);
-        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) m++;
-
-        // value = (q + frac) * 2^(sh-9) = m * 2^(drop + sh - 9)
-        return Math.scalb((double) m, drop + sh - 9);
-    }
-
-    /**
-     * Converts decimal to double.
-     * <p>
-     * (hi:lo) * 10^-9 -> double, hi != 0 (W from 2^64 to 2^93), round-half-even.
-     * </p>
-     */
-    public static double toDoubleNanosHi(long hi, long lo) {
-        // W has bits = 65..93; sh = bits - 76 lies in the range [-11; 17]
-        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS;
-        long h, l;
-        boolean sticky;
-        if (sh > 0) {                                          // shift right, 1..17: lose low-order bits lo
-            sticky = (lo & ((1L << sh) - 1)) != 0;
-            l = (lo >>> sh) | (hi << (64 - sh));               // 64 - sh in [47; 63]
-            h = hi >>> sh;
-        } else {                                               // left shift by k = 0..11, no loss
-            int k = -sh;
-            h = (hi << k) | ((lo >>> 1) >>> (63 - k));         // = lo >>> (64 - k), but it's also correct when k == 0
-            l = lo << k;
-            sticky = false;
-        }
-
-        // q = floor(W' / D), r = W' mod D
-        // W' = ABC, where A, B, C - are 32-bit numbers
-        // 1. AB/D -> q1 and r
-        // 2. rC/D -> q0 and r
-        // 3. q = g1:g0 (55 or 56 bits) and sticky
-        long cur = (h << 32) | (l >>> 32);                     // < 2^44
-        long q1 = cur / D5_9;                                  // < 2^24
-        long r = cur - q1 * D5_9;                              // < D < 2^21
-        cur = (r << 32) | (l & 0xFFFFFFFFL);                   // < D * 2^32 < 2^53
-        long q0 = cur / D5_9;                                  // < 2^32, since r < D
-        r = cur - q0 * D5_9;
-        long q = (q1 << 32) | q0;                              // [2^54; 2^56): 55 or 56 bits
-        sticky |= r != 0;
-
-        // 53 bits of mantissa: drop = len(q) - 53 = 2 or 3 (q >>> 55 == 1 <=> len == 56)
-        int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS);
-        long m = q >>> drop;
-        long rem = q & ((1L << drop) - 1);
-        long half = 1L << (drop - 1);
-        // half-even rounding
-        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) {
-            m++;
-        }
-
-        // value = m * 2^p, m in [2^52, 2^53]
-        int p = drop + sh - EXP_SHIFT;
-        // m has 53 bits, we need to leave 52 explicit bits; m' = m - 2^52
-        // E = p + 52 + 1023 = p + 1075; 1023 - exponent offset for double
-        // instead of calculating m', we can add 53 bit of m to the exponent
-        // double value bits = (E << 52) | m' = ((E-1) << 52) + m
-        // 53 bit of m (a carry) results in an exponent of +1 and a zero mantissa, which is the correct result
-        return Double.longBitsToDouble(((long) (p + EXPONENT_SHIFT_D) << MANTISSA_EXPLICIT_BITS_D) + m);
-    }
-
-    /**
-     * Converts decimal to float.
-     * <p>
-     * (hi:lo) * 10^-9 -> float, hi != 0 (W from 2^64 to 2^93), round-half-even.
-     * </p>
-     */
-    public static float toFloatNanosHi(long hi, long lo) {
-        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS;   // -11..17
-        long h, l;
-        boolean sticky;
-        if (sh > 0) {
-            sticky = (lo & ((1L << sh) - 1)) != 0;
-            l = (lo >>> sh) | (hi << (64 - sh));
-            h = hi >>> sh;
-        } else {
-            int k = -sh;                                       // 0..11
-            h = (hi << k) | ((lo >>> 1) >>> (63 - k));         // correct even when k == 0
-            l = lo << k;
-            sticky = false;
-        }
-
-        long cur = (h << 32) | (l >>> 32);
-        long q1 = cur / D5_9;
-        long r = cur - q1 * D5_9;
-        cur = (r << 32) | (l & 0xFFFFFFFFL);
-        long q0 = cur / D5_9;
-        r = cur - q0 * D5_9;
-        long q = (q1 << 32) | q0;                              // 55 or 56 bits
-        sticky |= r != 0;
-
-        // len(q) - 24 = 31 or 32
-        int drop = MANTISSA_DROP_F + (int) (q >>> Q_MIN_BITS);
-        long m = q >>> drop;
-        long rem = q & ((1L << drop) - 1);
-        long half = 1L << (drop - 1);
-        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) {
-            m++;
-        }
-
-        int p = drop + sh - EXP_SHIFT;
-        return Float.intBitsToFloat((int) (((long) (p + EXPONENT_SHIFT_F) << MANTISSA_EXPLICIT_BITS_F) + m));
-    }
 }

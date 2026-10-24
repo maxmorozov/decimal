@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class DecimalCheck {
-    static long bad = 0, n = 0, slowHits = 0;
+    static long bad = 0, n = 0;
 
     static String str(boolean neg, long units, int nanos) {
         return (neg ? "-" : "") + units + "." + String.format("%09d", nanos);
