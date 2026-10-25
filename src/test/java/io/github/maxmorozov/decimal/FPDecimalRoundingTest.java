@@ -225,6 +225,14 @@ class FPDecimalRoundingTest {
         assertTrue(BigInteger.ONE.shiftLeft(46).bitLength() <= 63);  // float: W' помещается в long
     }
 
+    @Test
+    void floatNormalizationInvariants() {
+        BigInteger d = BigInteger.valueOf(1_953_125L);
+        BigInteger wMin = BigInteger.ONE.shiftLeft(62);
+        BigInteger wMax = BigInteger.ONE.shiftLeft(63).subtract(BigInteger.ONE);
+        assertEquals(42, wMin.divide(d).bitLength());          // Q_MIN_BITS_F
+        assertEquals(43, wMax.divide(d).bitLength());          // Q_MIN_BITS_F + 1
+    }
     // ------------------------------------------------------------------ helpers
 
     /**

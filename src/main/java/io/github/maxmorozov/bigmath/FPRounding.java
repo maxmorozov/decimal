@@ -15,21 +15,20 @@ public class FPRounding {
     private static final int Q_MIN_BITS_D = 55;
 
     private static final int MANTISSA_EXPLICIT_BITS_D = 52;
-    private static final int EXPONENT_OFFSET_D = 1023;
-    private static final int EXPONENT_SHIFT_D = EXPONENT_OFFSET_D + MANTISSA_EXPLICIT_BITS_D - 1;
-    private static final int MANTISSA_DROP_D = Q_MIN_BITS_D - MANTISSA_EXPLICIT_BITS_D - 1;
+    private static final int EXPONENT_BIAS_D = 1023;
+    private static final int PRECISION_D = MANTISSA_EXPLICIT_BITS_D + 1;
+    private static final int EXPONENT_OFFSET_D = EXPONENT_BIAS_D + MANTISSA_EXPLICIT_BITS_D - 1;
+    private static final int MANTISSA_DROP_D = Q_MIN_BITS_D - PRECISION_D;
 
-    private static final int NORM_BITS_F = 46;            // |W'| = 46 bits  =>  q = W'/D has 25 or 26 bits
-    private static final int Q_MIN_BITS_F = 25;
+    private static final int NORM_BITS_F = 63;            // |W'| = 63 bits  =>  q = W'/D has 42 or 43 bits
+    // bitLength(floor(2^62 / D)) = 42; q can be 42 or 43 bits long
+    private static final int Q_MIN_BITS_F = 64 - Long.numberOfLeadingZeros((1L << (NORM_BITS_F - 1)) / D5_9); // 42
 
     private static final int MANTISSA_EXPLICIT_BITS_F = 23;
-    private static final int EXPONENT_OFFSET_F = 127;
-    private static final int EXPONENT_SHIFT_F = EXPONENT_OFFSET_F + MANTISSA_EXPLICIT_BITS_F - 1;
-    private static final int MANTISSA_DROP_F = Q_MIN_BITS_F - MANTISSA_EXPLICIT_BITS_F - 1;
-
-    private static final int NORM_BITS_LO_F = 63;            // |W'| = 63 bits  =>  q = W'/D has 42 or 43 bits
-    private static final int Q_MIN_BITS_LO_F = 42;
-    private static final int MANTISSA_DROP_LO_F = Q_MIN_BITS_LO_F - MANTISSA_EXPLICIT_BITS_F - 1;
+    private static final int EXPONENT_BIAS_F = 127;
+    private static final int PRECISION_F = MANTISSA_EXPLICIT_BITS_F + 1;
+    private static final int EXPONENT_OFFSET_F = EXPONENT_BIAS_F + MANTISSA_EXPLICIT_BITS_F - 1;
+    private static final int MANTISSA_DROP_F = Q_MIN_BITS_F - PRECISION_F;
 
 
     /**
@@ -148,57 +147,48 @@ public class FPRounding {
         // instead of calculating m', we can add 53 bit of m to the exponent
         // double value bits = (E << 52) | m' = ((E-1) << 52) + m
         // 53 bit of m (a carry) results in an exponent of +1 and a zero mantissa, which is the correct result
-        return Double.longBitsToDouble(((long) (p + EXPONENT_SHIFT_D) << MANTISSA_EXPLICIT_BITS_D) + m);
+        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
     }
 
     /**
      * Converts decimal to float.
      * <p>
-     * (hi:lo) * 10^-9 -> float, hi != 0 (W from 2^64 to 2^93), round-half-even.
+     * (hi:lo) * 10^-9 -> float, hi != 0 (W in [2^64; 2^93)).
      * </p>
      */
     public static float toFloatNanosHi(long hi, long lo) {
-        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_F;      // 19..47, always > 0
-        long w = (lo >>> sh) | (hi << (64 - sh));                 // W' = W >>> sh, 2^45 <= W' < 2^46
-        boolean sticky = (lo & ((1L << sh) - 1)) != 0;            // the lost bits are only in lo
-
-        long q = w / D5_9;                                        // [2^24; 2^26): 25 or 26 бит
-        sticky |= w != q * D5_9;                                  // remainder of division != 0
-
-        int drop = MANTISSA_DROP_F + (int) (q >>> Q_MIN_BITS_F);  // len(q) - 24 = 1 or 2
-        long m = q >>> drop;                                      // 24 bits
-        long rem = q & ((1L << drop) - 1);
-        long half = 1L << (drop - 1);
-        // half-even rounding
-        if (rem > half || (rem == half && (sticky || (m & 1) != 0))) {
-            m++;
-        }
-
-        int p = drop + sh - EXP_SHIFT;                            // m * 2^p, p in [11; 40]
-        return Float.intBitsToFloat((int) (((long) (p + EXPONENT_SHIFT_F) << MANTISSA_EXPLICIT_BITS_F) + m));
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_F;     // 2..30, always > 0
+        long w = (lo >>> sh) | (hi << (64 - sh));                         // 63 bits, the most significant ones are not lost
+        boolean sticky = (lo & ((1L << sh) - 1)) != 0;
+        return roundFloat(w, sticky, sh);
     }
 
     /**
-     * lo (unsigned, lo != 0) * 10^-9 -> float, round-half-even. For hi == 0.
+     * Converts decimal to float.
+     * <p>
+     * lo (unsigned, lo != 0) * 10^-9 -> float, for hi == 0.
+     * </p>
      */
     public static float toFloatNanosLo(long lo) {
-        int s = Long.numberOfLeadingZeros(lo) - (64 - NORM_BITS_LO_F);  // -1..62; w = lo * 2^s in [2^62; 2^63)
-        long w;
-        boolean sticky;
-        if (s >= 0) {
-            w = lo << s;
-            sticky = false;
-        } else {                                             // lo >= 2^63: shift right by 1
-            w = lo >>> 1;
-            sticky = (lo & 1) != 0;
+        int sh = (64 - Long.numberOfLeadingZeros(lo)) - NORM_BITS_F;      // -62..1
+        if (sh > 0) {                                                     // lo >= 2^63: shift right by 1 bit
+            boolean sticky = (lo & ((1L << sh) - 1)) != 0;
+            return roundFloat(lo >>> sh, sticky, sh);
         }
+        return roundFloat(lo << -sh, false, sh);                          // without losses
+    }
 
-        long q = w / D5_9;                                   // [2^41; 2^43): 42 or 43 bits
-        sticky |= w != q * D5_9;                             // remainder of division != 0
+    /**
+     * value = (w + ε) * 2^shift * 10^-9, where w ∈ [2^62; 2^63) and ε ∈ [0; 1)
+     * is determined by the "sticky" flag (indicating that non-zero lower-order bits were discarded).
+     * The result is a normalized float, using the "round-half-even" rounding mode.
+     */
+    private static float roundFloat(long w, boolean sticky, int shift) {
+        long q = w / D5_9;                                    // 42 or 43 bits
+        sticky |= w != q * D5_9;                              // remainder of division != 0
 
-        // len(q) - 24 = 18 или 19
-        int drop = MANTISSA_DROP_LO_F + (int) (q >>> Q_MIN_BITS_LO_F);
-        long m = q >>> drop;                                 // 24 bits
+        int drop = MANTISSA_DROP_F + (int) (q >>> Q_MIN_BITS_F); // 18 or 19: q >>> 42 == 1 <=> q is 43-bit
+        long m = q >>> drop;                                  // 24 bits
         long rem = q & ((1L << drop) - 1);
         long half = 1L << (drop - 1);
         // half-even rounding
@@ -206,8 +196,8 @@ public class FPRounding {
             m++;
         }
 
-        int p = drop - s - EXP_SHIFT;                        // value ~= m * 2^p
-        return Float.intBitsToFloat((int) (((long) (p + EXPONENT_SHIFT_F) << MANTISSA_EXPLICIT_BITS_F) + m));
+        int p = drop + shift - EXP_SHIFT;                      // value ~= m * 2^p
+        return Float.intBitsToFloat((int) (((long) (p + EXPONENT_OFFSET_F) << MANTISSA_EXPLICIT_BITS_F) + m));
     }
 
 }
