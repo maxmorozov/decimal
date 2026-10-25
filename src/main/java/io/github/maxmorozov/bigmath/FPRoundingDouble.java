@@ -49,10 +49,6 @@ public final class FPRoundingDouble {
         return roundDouble(h, l, sticky, sh);
     }
 
-    /**
-     * Experimental: the same as toDoubleNanosHi, but both normalization shifts (right by s, left by k) are always
-     * executed, one of them by 0 bits, so there is no data-dependent branch on the sign of sh.
-     */
     public static double toDoubleNanosHiBranchless(long hi, long lo) {
         int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_D;   // -11..17
         int s = Math.max(sh, 0);                                         // right shift, 0..17
@@ -62,6 +58,109 @@ public final class FPRoundingDouble {
         long h = hi >>> s;
         h = (h << k) | ((l >>> 1) >>> (63 - k));
         l <<= k;
+        return roundDouble(h, l, sticky, sh);
+    }
+
+
+    /**
+     * Experimental: round half up on the main path (one add and one shift, no sticky needed), and fix the
+     * exact tie in a rare branch where the sticky bit and the parity are examined lazily.
+     */
+    public static double toDoubleNanosHiLazy(long hi, long lo) {
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_D;
+        long h, l;
+        boolean sticky;
+        if (sh > 0) {
+            sticky = (lo & ((1L << sh) - 1)) != 0;
+            l = (lo >>> sh) | (hi << (64 - sh));
+            h = hi >>> sh;
+        } else {
+            int k = -sh;
+            h = (hi << k) | ((lo >>> 1) >>> (63 - k));
+            l = lo << k;
+            sticky = false;
+        }
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        long q = (q1 << 32) | q0;
+
+        int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS_D);
+        long half = 1L << (drop - 1);
+        long m = (q + half) >>> drop;                          // round half up
+        if ((q & ((half << 1) - 1)) == half                    // exact tie in q (rare)
+                && !sticky && cur == q0 * D5_9                 // nothing was dropped or left in the remainder
+                && (m & 1) != 0) {                             // rounded up to odd -> round to even instead
+            m--;
+        }
+        int p = drop + sh - EXP_SHIFT;
+        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
+    }
+
+    /**
+     * Experimental: normalization without a branch on the sign of sh and without max():
+     * W is always shifted left by 11 bits first (no loss, W << 11 has at most 104 bits), and then always shifted
+     * right by t = sh + 11 = 0..28 bits. Rounding is the same as in toDoubleNanosHi.
+     */
+    public static double toDoubleNanosHiFlat(long hi, long lo) {
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_D;   // -11..17
+        long h0 = (hi << 11) | (lo >>> 53);
+        long l0 = lo << 11;
+        int t = sh + 11;                                                 // 0..28
+        boolean sticky = (l0 & ((1L << t) - 1)) != 0;                    // the 11 low bits of l0 are zeros
+        long l = (l0 >>> t) | ((h0 << 1) << (63 - t));                   // = l0 when t == 0
+        long h = h0 >>> t;
+        return roundDouble(h, l, sticky, sh);
+    }
+
+    /**
+     * Experimental: the flat normalization + round-half-up with a lazy fix of the exact tie.
+     */
+    public static double toDoubleNanosHiFlatLazy(long hi, long lo) {
+        int sh = (128 - Long.numberOfLeadingZeros(hi)) - NORM_BITS_D;
+        long h0 = (hi << 11) | (lo >>> 53);
+        long l0 = lo << 11;
+        int t = sh + 11;
+        boolean sticky = (l0 & ((1L << t) - 1)) != 0;
+        long l = (l0 >>> t) | ((h0 << 1) << (63 - t));
+        long h = h0 >>> t;
+
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        long q = (q1 << 32) | q0;
+
+        int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS_D);
+        long half = 1L << (drop - 1);
+        long m = (q + half) >>> drop;                          // round half up
+        if ((q & ((half << 1) - 1)) == half                    // exact tie in q (rare)
+                && !sticky && cur == q0 * D5_9
+                && (m & 1) != 0) {
+            m--;
+        }
+        int p = drop + sh - EXP_SHIFT;
+        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
+    }
+
+    /**
+     * Experimental: one branch-free path for every W in [2^53; 2^93) (hi == 0 is allowed), so that the caller only
+     * has to separate the Clinger case (W <= 2^53). W is always shifted left by 22 bits first (no loss, at most
+     * 115 bits), then always right by t = sh + 22 = 0..39 bits, where sh = bits - 76 is in [-22; 17].
+     */
+    public static double toDoubleNanosFlat(long hi, long lo) {
+        int nlzHi = Long.numberOfLeadingZeros(hi);
+        int nlz = nlzHi == 64 ? 64 + Long.numberOfLeadingZeros(lo) : nlzHi;   // leading zeros of the 128-bit W
+        int sh = (128 - nlz) - NORM_BITS_D;                                    // -22..17 for W > 2^53
+        long h0 = (hi << 22) | (lo >>> 42);
+        long l0 = lo << 22;
+        int t = sh + 22;                                                       // 0..39
+        boolean sticky = (l0 & ((1L << t) - 1)) != 0;                          // the 22 low bits of l0 are zeros
+        long l = (l0 >>> t) | ((h0 << 1) << (63 - t));
+        long h = h0 >>> t;
         return roundDouble(h, l, sticky, sh);
     }
 

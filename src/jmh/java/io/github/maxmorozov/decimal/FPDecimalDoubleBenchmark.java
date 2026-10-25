@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @OperationsPerInvocation(FPDecimalDoubleBenchmark.N)
 public class FPDecimalDoubleBenchmark {
 
-    static final int N = 4096;
+    static final int N = 262144;
 
     private static final BigInteger E9 = BigInteger.valueOf(1_000_000_000L);
     private static final BigInteger D = BigInteger.valueOf(1_953_125L);          // 5^9

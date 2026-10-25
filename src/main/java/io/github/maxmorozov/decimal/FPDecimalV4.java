@@ -38,16 +38,11 @@ public record FPDecimalV4(boolean negative, long units, int nanos) {
         }
 
         double v;
-        if (hi == 0) {
-            if (Long.compareUnsigned(lo, FAST_MAX_SIG_D) <= 0) {
-                // Clinger: W and 10^9 are both exact in double -> one correctly rounded division
-                v = (double) lo / 1e9;
-            } else {
-                v = DecimalToDouble.compute_float(lo, -9);   // W fits 64 bits: exact input
-            }
+        if (hi == 0 && Long.compareUnsigned(lo, FAST_MAX_SIG_D) <= 0) {
+            // Clinger: W and 10^9 are both exact in double -> one correctly rounded division
+            v = (double) lo / 1e9;
         } else {
-            // W has 65..93 bits
-            v = FPRoundingDouble.toDoubleNanosHiBranchless(hi, lo);
+            v = FPRoundingDouble.toDoubleNanosFlat(hi, lo);
         }
         return negative ? -v : v;
     }
