@@ -172,8 +172,11 @@ public class FPRounding {
     public static float toFloatNanosLo(long lo) {
         int sh = (64 - Long.numberOfLeadingZeros(lo)) - NORM_BITS_F;      // -62..1
         if (sh > 0) {                                                     // lo >= 2^63: shift right by 1 bit
-            boolean sticky = (lo & ((1L << sh) - 1)) != 0;
-            return roundFloat(lo >>> sh, sticky, sh);
+            // sticky = (lo & ((1L << sh) - 1)) != 0
+            // w = lo >>> sh
+            // positive sh can only be 1, so we can simplify the expressions
+            boolean sticky = (lo & 1) != 0;
+            return roundFloat(lo >>> 1, sticky, sh);
         }
         return roundFloat(lo << -sh, false, sh);                          // without losses
     }
