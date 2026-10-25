@@ -233,6 +233,20 @@ class FPDecimalRoundingTest {
         assertEquals(42, wMin.divide(d).bitLength());          // Q_MIN_BITS_F
         assertEquals(43, wMax.divide(d).bitLength());          // Q_MIN_BITS_F + 1
     }
+
+    /**
+     * nanos == 0: W делится на 5^9, остаток нулевой, sticky только от сдвига.
+     */
+    @Test
+    void integerAmounts() {
+        Random rnd = new Random(SEED + 5);
+        for (int i = 0; i < 200_000; i++) {
+            long units = rnd.nextLong() >>> (1 + rnd.nextInt(63));
+            check(BigInteger.valueOf(units).multiply(E9));
+            check(BigInteger.valueOf(units).multiply(E9).add(BigInteger.valueOf(rnd.nextInt(1000)))); // рядом
+        }
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**

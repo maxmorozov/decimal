@@ -163,12 +163,6 @@ public class FPRounding {
         return roundFloat(w, sticky, sh);
     }
 
-    /**
-     * Converts decimal to float.
-     * <p>
-     * lo (unsigned, lo != 0) * 10^-9 -> float, for hi == 0.
-     * </p>
-     */
     public static float toFloatNanosLo(long lo) {
         int sh = (64 - Long.numberOfLeadingZeros(lo)) - NORM_BITS_F;      // -62..1
         if (sh > 0) {                                                     // lo >= 2^63: shift right by 1 bit
