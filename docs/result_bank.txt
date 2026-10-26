@@ -1,0 +1,9 @@
+Benchmark                             (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_V1    bank  avgt   24  3,208 ± 0,054  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3    bank  avgt   24  3,054 ± 0,008  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4    bank  avgt   24  3,118 ± 0,041  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5    bank  avgt   24  3,185 ± 0,006  ns/op
+FPDecimalFloatBenchmark.toFloat_V1      bank  avgt   24  7,041 ± 0,007  ns/op
+FPDecimalFloatBenchmark.toFloat_V3      bank  avgt   24  3,494 ± 0,018  ns/op
+FPDecimalFloatBenchmark.toFloat_V4      bank  avgt   24  3,273 ± 0,029  ns/op
+FPDecimalFloatBenchmark.toFloat_V5      bank  avgt   24  4,049 ± 0,006  ns/op
