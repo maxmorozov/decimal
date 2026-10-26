@@ -50,6 +50,25 @@ public final class FPRoundingFloat {
         return roundFloat(w, sticky, 65 - z);                         // W ~ w * 2^(65 - z)
     }
 
+    /**
+     * The same as toFloatNanosFlat, but the choice between hi != 0 and hi == 0 is made with masks, not with
+     * ternaries, so it cannot be compiled into a branch. If hi == 0, lo is moved to the high word
+     * (W' = lo * 2^64, which has 64 more bits of shift to account for).
+     */
+    public static float toFloatNanosFlatMask(long hi, long lo) {
+        long nz = (hi | -hi) >> 63;                                   // -1 if hi != 0, 0 if hi == 0
+        long hiN = hi | (lo & ~nz);                                   // never zero
+        long loN = lo & nz;
+        int zz = Long.numberOfLeadingZeros(hiN);                      // 0..63
+        long h = (hiN << zz) | ((loN >>> 1) >>> (63 - zz));
+        long l = loN << zz;
+        int z = zz + (int) (~nz & 64);                                // leading zeros of the 128-bit W
+
+        long w = h >>> 1;
+        boolean sticky = (l | (h & 1)) != 0;
+        return roundFloat(w, sticky, 65 - z);
+    }
+
     private static float roundFloat(long w, boolean sticky, int shift) {
         long q = w / D5_9;                                    // 42 or 43 bits
         sticky |= w != q * D5_9;                              // remainder of division != 0

@@ -153,7 +153,7 @@ public final class FPRoundingDouble {
      */
     public static double toDoubleNanosFlat(long hi, long lo) {
         int nlzHi = Long.numberOfLeadingZeros(hi);
-        int nlz = nlzHi == 64 ? 64 + Long.numberOfLeadingZeros(lo) : nlzHi;   // leading zeros of the 128-bit W
+        int nlz = nlzHi + (-(nlzHi >>> 6) & Long.numberOfLeadingZeros(lo));    // 128-bit W; no ternary: nlzHi >>> 6 == 1 only for hi == 0
         int sh = (128 - nlz) - NORM_BITS_D;                                    // -22..17 for W > 2^53
         long h0 = (hi << 22) | (lo >>> 42);
         long l0 = lo << 22;
@@ -162,6 +162,41 @@ public final class FPRoundingDouble {
         long l = (l0 >>> t) | ((h0 << 1) << (63 - t));
         long h = h0 >>> t;
         return roundDouble(h, l, sticky, sh);
+    }
+
+    /**
+     * The same as toDoubleNanosFlat, but without anything the JIT can turn into a data-dependent branch:
+     * the leading zeros of the 128-bit W and the sticky bit are computed arithmetically.
+     * In the "integers" profile (nanos == 0) the sticky bit changes from value to value, and C2 compiled
+     * both "(l0 & mask) != 0" and "r != 0" into branches.
+     */
+    public static double toDoubleNanosFlatBranchless(long hi, long lo) {
+        int nlzHi = Long.numberOfLeadingZeros(hi);
+        int nlz = nlzHi + (-(nlzHi >>> 6) & Long.numberOfLeadingZeros(lo));
+        int sh = (128 - nlz) - NORM_BITS_D;
+        long h0 = (hi << 22) | (lo >>> 42);
+        long l0 = lo << 22;
+        int t = sh + 22;
+        long lost = l0 & ((1L << t) - 1);
+        long l = (l0 >>> t) | ((h0 << 1) << (63 - t));
+        long h = h0 >>> t;
+
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        r = cur - q0 * D5_9;
+        long q = (q1 << 32) | q0;
+        long x = lost | r;                                     // non-zero <=> sticky
+        long sticky = (x | -x) >>> 63;                         // 0 or 1, no branch
+
+        int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS_D);
+        long half = 1L << (drop - 1);
+        long add = half - 1 + (((q >>> drop) | sticky) & 1);
+        long m = (q + add) >>> drop;
+        int p = drop + sh - EXP_SHIFT;
+        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
     }
 
     /**

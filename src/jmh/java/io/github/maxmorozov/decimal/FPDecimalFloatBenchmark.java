@@ -39,7 +39,7 @@ public class FPDecimalFloatBenchmark {
     private static final BigInteger MAX_W = BigInteger.valueOf(Long.MAX_VALUE)
             .multiply(E9).add(BigInteger.valueOf(999_999_999L));
 
-    @Param({"clinger", "lo_mid", "lo_high", "hi", "integers", "ties", "mixed"})
+    @Param({"clinger", "lo_mid", "lo_high", "hi", "integers", "ties", "mixed", "bank"})
     private String kind;
 
     private FPDecimalV3[] data_v3;
@@ -154,6 +154,7 @@ public class FPDecimalFloatBenchmark {
                 String[] kinds = {"clinger", "lo_mid", "lo_high", "hi", "integers", "ties"};
                 yield next(kinds[rnd.nextInt(kinds.length)], rnd);
             }
+            case "bank" -> bank(rnd);
             default -> throw new IllegalArgumentException(kind);
         };
     }
@@ -184,6 +185,21 @@ public class FPDecimalFloatBenchmark {
         long m = (1L << 23) + rnd.nextInt(1 << 23);
         int k = 1 + rnd.nextInt(38);                  // units < 2^62
         return new long[]{(2 * m + 1) << (k - 1), 0};
+    }
+
+    private static long[] bank(Random rnd) {
+        int r = rnd.nextInt(100);
+        if (r < 55) {                                         // FX rates and prices, 4..6 decimals
+            long units = rnd.nextInt(r < 20 ? 3 : 200_000);
+            int digits = 4 + rnd.nextInt(3);
+            int scale = (int) Math.pow(10, 9 - digits);
+            return new long[]{units, (long) rnd.nextInt((int) Math.pow(10, digits)) * scale};
+        } else if (r < 95) {                                  // amounts with 2 decimals, up to ~3e10
+            long units = Math.floorMod(rnd.nextLong(), 1L << (10 + rnd.nextInt(26)));
+            return new long[]{units, rnd.nextInt(100) * 10_000_000L};
+        } else {                                              // large notionals without decimals
+            return new long[]{Math.floorMod(rnd.nextLong(), 1L << (30 + rnd.nextInt(33))), 0};
+        }
     }
 
     public static void main(String[] args) throws Exception {

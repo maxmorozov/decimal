@@ -41,7 +41,7 @@ public record FPDecimalV5(boolean negative, long units, int nanos) {
             // Clinger: W and 10^9 are both exact in double -> one correctly rounded division
             v = (double) lo / 1e9;
         } else {
-            v = FPRoundingDouble.toDoubleNanosFlat(hi, lo);
+            v = FPRoundingDouble.toDoubleNanosFlatBranchless(hi, lo);
         }
         return negative ? -v : v;
     }
@@ -61,7 +61,7 @@ public record FPDecimalV5(boolean negative, long units, int nanos) {
             // float: W < 2^24  <=>  hi == 0 && lo < 2^24
             v = (float) lo / 1e9f;
         } else {
-            v = FPRoundingFloat.toFloatNanosFlat(hi, lo);
+            v = FPRoundingFloat.toFloatNanosFlatMask(hi, lo);
         }
         return negative ? -v : v;
     }

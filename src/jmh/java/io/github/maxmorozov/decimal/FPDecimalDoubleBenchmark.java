@@ -40,7 +40,7 @@ public class FPDecimalDoubleBenchmark {
     private static final BigInteger MAX_W = BigInteger.valueOf(Long.MAX_VALUE)
             .multiply(E9).add(BigInteger.valueOf(999_999_999L));
 
-    @Param({"clinger", "lo", "hi_left", "hi_right", "hi_both", "integers", "ties", "mixed"})
+    @Param({"clinger", "lo", "hi_left", "hi_right", "hi_both", "integers", "ties", "mixed", "bank"})
     private String kind;
 
     private FPDecimalV3[] data_v3;
@@ -98,32 +98,6 @@ public class FPDecimalDoubleBenchmark {
             }
         }
 
-/*
-        for (int i = 0; i < N; i++) {
-            long[] v = next(kind, rnd);
-            // "mixed" also contains negative values: the sign handling is a data-dependent branch,
-            // and a profile without negatives compiles it into an uncommon trap
-            boolean neg = kind.equals("mixed") && rnd.nextBoolean();
-            data_v3[i] = new FPDecimalV3(neg, v[0], (int) v[1]);
-            data_v4[i] = new FPDecimalV4(neg, v[0], (int) v[1]);
-            ref[i] = new FPDecimal(neg, v[0], (int) v[1]);
-
-            // guard: do not measure a wrong implementation
-            double expected = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).doubleValue();
-            if (neg) {
-                expected = -expected;
-            }
-            if (Double.doubleToRawLongBits(ref[i].toDouble()) != Double.doubleToRawLongBits(expected)) {
-                throw new IllegalStateException("Wrong result v1 for units=" + v[0] + " nanos=" + v[1]);
-            }
-            if (Double.doubleToRawLongBits(data_v3[i].toDouble()) != Double.doubleToRawLongBits(expected)) {
-                throw new IllegalStateException("Wrong result v3 for units=" + v[0] + " nanos=" + v[1]);
-            }
-            if (Double.doubleToRawLongBits(data_v4[i].toDouble()) != Double.doubleToRawLongBits(expected)) {
-                throw new IllegalStateException("Wrong result v4 for units=" + v[0] + " nanos=" + v[1]);
-            }
-        }
-*/
     }
 
     @Benchmark
@@ -172,6 +146,7 @@ public class FPDecimalDoubleBenchmark {
                 String[] kinds = {"clinger", "lo", "hi_left", "hi_right", "integers", "ties"};
                 yield next(kinds[rnd.nextInt(kinds.length)], rnd);
             }
+            case "bank" -> bank(rnd);
             default -> throw new IllegalArgumentException(kind);
         };
     }
@@ -213,6 +188,21 @@ public class FPDecimalDoubleBenchmark {
     private static long[] split(BigInteger w) {
         BigInteger[] qr = w.divideAndRemainder(E9);
         return new long[]{qr[0].longValueExact(), qr[1].longValueExact()};
+    }
+
+    private static long[] bank(Random rnd) {
+        int r = rnd.nextInt(100);
+        if (r < 55) {                                         // FX rates and prices, 4..6 decimals
+            long units = rnd.nextInt(r < 20 ? 3 : 200_000);
+            int digits = 4 + rnd.nextInt(3);
+            int scale = (int) Math.pow(10, 9 - digits);
+            return new long[]{units, (long) rnd.nextInt((int) Math.pow(10, digits)) * scale};
+        } else if (r < 95) {                                  // amounts with 2 decimals, up to ~3e10
+            long units = Math.floorMod(rnd.nextLong(), 1L << (10 + rnd.nextInt(26)));
+            return new long[]{units, rnd.nextInt(100) * 10_000_000L};
+        } else {                                              // large notionals without decimals
+            return new long[]{Math.floorMod(rnd.nextLong(), 1L << (30 + rnd.nextInt(33))), 0};
+        }
     }
 
     public static void main(String[] args) throws Exception {
