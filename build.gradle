@@ -11,7 +11,7 @@ repositories {
 }
 
 jmh {
-    includes = ["FPDecimalDoubleBenchmark"]
+    includes = ["FPDecimalFloatBenchmark"]
 }
 
 dependencies {

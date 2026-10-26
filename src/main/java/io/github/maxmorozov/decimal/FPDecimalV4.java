@@ -1,6 +1,7 @@
 package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.bigmath.FPRoundingDouble;
+import io.github.maxmorozov.bigmath.FPRoundingFloat;
 
 import static io.github.maxmorozov.bigmath.FPRoundingV4.*;
 
@@ -58,14 +59,10 @@ public record FPDecimalV4(boolean negative, long units, int nanos) {
         }
 
         float v;
-        if (hi == 0) {
-            if (Long.compareUnsigned(lo, FAST_MAX_SIG_F) <= 0) {
-                v = (float) lo / 1e9f;                         // 10^9 = 2^9 * 5^9 is exact in float
-            } else {
-                v = toFloatNanosLo(lo);
-            }
+        if (hi == 0 && Long.compareUnsigned(lo, FAST_MAX_SIG_F) <= 0) {
+            v = (float) lo / 1e9f;
         } else {
-            v = toFloatNanosHi(hi, lo);
+            v = FPRoundingFloat.toFloatNanosFlat(hi, lo);
         }
         return negative ? -v : v;
     }

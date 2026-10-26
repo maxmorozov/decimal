@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @OperationsPerInvocation(FPDecimalFloatBenchmark.N)
 public class FPDecimalFloatBenchmark {
 
-    static final int N = 4096;
+    static final int N = 262144;
 
     private static final BigInteger E9 = BigInteger.valueOf(1_000_000_000L);
     private static final BigInteger MAX_W = BigInteger.valueOf(Long.MAX_VALUE)
@@ -52,6 +52,37 @@ public class FPDecimalFloatBenchmark {
         data_v3 = new FPDecimalV3[N];
         data_v4 = new FPDecimalV4[N];
         ref = new FPDecimal[N];
+
+        long[] u = new long[N];
+        int[] n = new int[N];
+        float[] expected = new float[N];
+        for (int i = 0; i < N; i++) {
+            long[] v = next(kind, rnd);
+            u[i] = v[0];
+            n[i] = (int) v[1];
+            // guard: do not measure a wrong implementation
+            expected[i] = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).floatValue();
+        }
+        for (int i = 0; i < N; i++) {
+            ref[i] = new FPDecimal(false, u[i], n[i]);
+            if (Float.floatToRawIntBits(ref[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v1 for units=" + u[i] + " nanos=" + n[i]);
+            }
+        }
+        for (int i = 0; i < N; i++) {
+            data_v3[i] = new FPDecimalV3(false, u[i], n[i]);
+            if (Float.floatToRawIntBits(data_v3[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v3 for units=" + u[i] + " nanos=" + n[i]);
+            }
+        }
+        for (int i = 0; i < N; i++) {
+            data_v4[i] = new FPDecimalV4(false, u[i], n[i]);
+            if (Float.floatToRawIntBits(data_v4[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v4 for units=" + u[i] + " nanos=" + n[i]);
+            }
+        }
+
+/*
         for (int i = 0; i < N; i++) {
             long[] v = next(kind, rnd);
             data_v3[i] = new FPDecimalV3(false, v[0], (int) v[1]);
@@ -67,6 +98,7 @@ public class FPDecimalFloatBenchmark {
                 throw new IllegalStateException("Wrong result v4 for units=" + v[0] + " nanos=" + v[1]);
             }
         }
+*/
     }
 
     @Benchmark
