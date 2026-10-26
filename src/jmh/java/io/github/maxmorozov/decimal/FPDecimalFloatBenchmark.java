@@ -44,6 +44,7 @@ public class FPDecimalFloatBenchmark {
 
     private FPDecimalV3[] data_v3;
     private FPDecimalV4[] data_v4;
+    private FPDecimalV5[] data_v5;
     private FPDecimal[] ref;
 
     @Setup
@@ -51,6 +52,7 @@ public class FPDecimalFloatBenchmark {
         Random rnd = new Random(42);
         data_v3 = new FPDecimalV3[N];
         data_v4 = new FPDecimalV4[N];
+        data_v5 = new FPDecimalV5[N];
         ref = new FPDecimal[N];
 
         long[] u = new long[N];
@@ -79,6 +81,12 @@ public class FPDecimalFloatBenchmark {
             data_v4[i] = new FPDecimalV4(false, u[i], n[i]);
             if (Float.floatToRawIntBits(data_v4[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
                 throw new IllegalStateException("Wrong result v4 for units=" + u[i] + " nanos=" + n[i]);
+            }
+        }
+        for (int i = 0; i < N; i++) {
+            data_v5[i] = new FPDecimalV5(false, u[i], n[i]);
+            if (Float.floatToRawIntBits(data_v5[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v5 for units=" + u[i] + " nanos=" + n[i]);
             }
         }
 
@@ -118,6 +126,13 @@ public class FPDecimalFloatBenchmark {
     @Benchmark
     public void toFloat_V4(Blackhole blackhole) {
         for (FPDecimalV4 d : data_v4) {
+            blackhole.consume(d.toFloat());
+        }
+    }
+
+    @Benchmark
+    public void toFloat_V5(Blackhole blackhole) {
+        for (FPDecimalV5 d : data_v5) {
             blackhole.consume(d.toFloat());
         }
     }

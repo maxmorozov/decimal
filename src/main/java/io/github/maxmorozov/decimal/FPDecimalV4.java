@@ -3,8 +3,6 @@ package io.github.maxmorozov.decimal;
 import io.github.maxmorozov.bigmath.FPRoundingDouble;
 import io.github.maxmorozov.bigmath.FPRoundingFloat;
 
-import static io.github.maxmorozov.bigmath.FPRoundingV4.*;
-
 /**
  * Fixed-point decimal with 9 fractional digits:
  * value = (-1)^negative * (units + nanos / 10^9),  units >= 0,  0 <= nanos < 10^9.
