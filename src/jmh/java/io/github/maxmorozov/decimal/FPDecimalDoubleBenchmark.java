@@ -46,6 +46,7 @@ public class FPDecimalDoubleBenchmark {
     private FPDecimalV3[] data_v3;
     private FPDecimalV4[] data_v4;
     private FPDecimalV5[] data_v5;
+    private FPDecimalV6[] data_v6;
     private FPDecimal[] ref;
 
     @Setup
@@ -54,6 +55,7 @@ public class FPDecimalDoubleBenchmark {
         data_v3 = new FPDecimalV3[N];
         data_v4 = new FPDecimalV4[N];
         data_v5 = new FPDecimalV5[N];
+        data_v6 = new FPDecimalV6[N];
         ref = new FPDecimal[N];
 
         long[] u = new long[N];
@@ -97,6 +99,12 @@ public class FPDecimalDoubleBenchmark {
                 throw new IllegalStateException("Wrong result v5 for units=" + u[i] + " nanos=" + n[i]);
             }
         }
+        for (int i = 0; i < N; i++) {
+            data_v6[i] = new FPDecimalV6(neg[i], u[i], n[i]);
+            if (Double.doubleToRawLongBits(data_v6[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
+            }
+        }
 
     }
 
@@ -124,6 +132,13 @@ public class FPDecimalDoubleBenchmark {
     @Benchmark
     public void toDouble_V5(Blackhole blackhole) {
         for (FPDecimalV5 d : data_v5) {
+            blackhole.consume(d.toDouble());
+        }
+    }
+
+    @Benchmark
+    public void toDouble_V6(Blackhole blackhole) {
+        for (FPDecimalV6 d : data_v6) {
             blackhole.consume(d.toDouble());
         }
     }

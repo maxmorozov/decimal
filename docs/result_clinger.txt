@@ -1,0 +1,41 @@
+JDK 21
+Benchmark                               (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_V5   clinger  avgt   24  3,070 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5        lo  avgt   24  5,371 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_left  avgt   24  5,370 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  hi_right  avgt   24  5,365 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_both  avgt   24  5,368 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  integers  avgt   24  5,915 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      ties  avgt   24  5,370 ± 0,006  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5     mixed  avgt   24  7,590 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      bank  avgt   24  3,183 ± 0,006  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   clinger  avgt   24  1,028 ± 0,001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6        lo  avgt   24  5,373 ± 0,005  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   hi_left  avgt   24  5,369 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6  hi_right  avgt   24  5,368 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   hi_both  avgt   24  5,369 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6  integers  avgt   24  6,020 ± 0,011  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6      ties  avgt   24  5,369 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6     mixed  avgt   24  8,190 ± 0,046  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6      bank  avgt   24  3,473 ± 0,005  ns/op
+
+JDK 25
+Benchmark                               (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_V5   clinger  avgt   24  0,786 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5        lo  avgt   24  5,459 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_left  avgt   24  5,458 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  hi_right  avgt   24  5,454 ± 0,001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_both  avgt   24  5,456 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  integers  avgt   24  5,838 ± 0,010  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      ties  avgt   24  5,453 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5     mixed  avgt   24  7,469 ± 0,020  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      bank  avgt   24  3,033 ± 0,011  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   clinger  avgt   24  1,005 ± 0,001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6        lo  avgt   24  5,461 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   hi_left  avgt   24  5,459 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6  hi_right  avgt   24  5,460 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6   hi_both  avgt   24  5,462 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6  integers  avgt   24  5,810 ± 0,015  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6      ties  avgt   24  5,462 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6     mixed  avgt   24  8,410 ± 0,054  ns/op
+FPDecimalDoubleBenchmark.toDouble_V6      bank  avgt   24  3,311 ± 0,004  ns/op

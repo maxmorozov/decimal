@@ -257,4 +257,20 @@ public final class FPRoundingDouble {
         // a carry (m == 2^53) increments the exponent and zeroes the mantissa, which is the correct result
         return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
     }
+
+    /**
+     * Clinger path for W = lo < 2^53: lo * 10^-9 with one correctly rounded division.
+     * <p>
+     * A plain (double) lo compiles to vcvtsi2sd, which on JDK 21 has a false dependency on the previous value of
+     * the destination register: in a loop it makes a chain of ~17 cycles (3 ns instead of 0.8 ns).
+     * Here the integer is converted without that instruction. Both 32-bit halves are exact doubles
+     * (2^52 + x has the mantissa field = x, and subtracting 2^52 gives x back), and
+     * a * 2^32 + b is an integer below 2^53, so the sum is exact too.
+     * </p>
+     */
+    public static double clingerToDouble(long lo) {
+        double a = Double.longBitsToDouble(0x4330000000000000L | (lo >>> 32)) - 0x1.0p52;
+        double b = Double.longBitsToDouble(0x4330000000000000L | (lo & 0xFFFFFFFFL)) - 0x1.0p52;
+        return (a * 0x1.0p32 + b) / 1e9;
+    }
 }
