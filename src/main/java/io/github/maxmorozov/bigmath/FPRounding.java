@@ -146,7 +146,7 @@ public class FPRounding {
         // E = p + 52 + 1023 = p + 1075; 1023 - exponent offset for double
         // instead of calculating m', we can add 53 bit of m to the exponent
         // double value bits = (E << 52) | m' = ((E-1) << 52) + m
-        // 53 bit of m (a carry) results in an exponent of +1 and a zero mantissa, which is the correct result
+        // a carry (m == 2^53) increments the exponent and zeroes the mantissa, which is the correct result
         return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
     }
 

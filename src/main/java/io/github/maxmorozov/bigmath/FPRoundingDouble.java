@@ -181,6 +181,11 @@ public final class FPRoundingDouble {
         long l = (l0 >>> t) | ((h0 << 1) << (63 - t));
         long h = h0 >>> t;
 
+        // q = floor(W' / D), r = W' mod D
+        // W' = ABC, where A, B, C are 32-bit digits
+        // 1. AB / D -> q1 and r
+        // 2. rC / D -> q0 and r
+        // 3. q = q1:q0 (55 or 56 bits)
         long cur = (h << 32) | (l >>> 32);
         long q1 = cur / D5_9;
         long r = cur - q1 * D5_9;
@@ -191,11 +196,18 @@ public final class FPRoundingDouble {
         long x = lost | r;                                     // non-zero <=> sticky
         long sticky = (x | -x) >>> 63;                         // 0 or 1, no branch
 
+        // 53 bits of mantissa: drop = len(q) - 53 = 2 or 3 (q >>> 55 == 1 <=> len == 56)
         int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS_D);
+
+        // round-half-even with sticky: add = half - 1 + (m_odd | sticky), m = (q + add) >>> drop
         long half = 1L << (drop - 1);
         long add = half - 1 + (((q >>> drop) | sticky) & 1);
         long m = (q + add) >>> drop;
+
+        // value = m * 2^p, m in [2^52; 2^53]
         int p = drop + sh - EXP_SHIFT;
+        // E = p + 52 + 1023, bits = (E << 52) | (m - 2^52) = ((E - 1) << 52) + m;
+        // a carry (m == 2^53) increments the exponent and zeroes the mantissa, which is the correct result
         return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
     }
 
