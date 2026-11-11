@@ -1,5 +1,7 @@
 package io.github.maxmorozov.decimal;
 
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverterFloat;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
@@ -42,18 +44,12 @@ public class FPDecimalFloatBenchmark {
     @Param({"clinger", "lo_mid", "lo_high", "hi", "integers", "ties", "mixed", "bank"})
     private String kind;
 
-    private FPDecimalV3[] data_v3;
-    private FPDecimalV4[] data_v4;
-    private FPDecimalV5[] data_v5;
-    private FPDecimal[] ref;
+    private FPDecimal[] data;
 
     @Setup
     public void setup() {
         Random rnd = new Random(42);
-        data_v3 = new FPDecimalV3[N];
-        data_v4 = new FPDecimalV4[N];
-        data_v5 = new FPDecimalV5[N];
-        ref = new FPDecimal[N];
+        data = new FPDecimal[N];
 
         long[] u = new long[N];
         int[] n = new int[N];
@@ -66,74 +62,57 @@ public class FPDecimalFloatBenchmark {
             expected[i] = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).floatValue();
         }
         for (int i = 0; i < N; i++) {
-            ref[i] = new FPDecimal(false, u[i], n[i]);
-            if (Float.floatToRawIntBits(ref[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+            data[i] = new FPDecimal(false, u[i], n[i]);
+            if (Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV1(data[i])) != Float.floatToRawIntBits(expected[i])) {
                 throw new IllegalStateException("Wrong result v1 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v3[i] = new FPDecimalV3(false, u[i], n[i]);
-            if (Float.floatToRawIntBits(data_v3[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+            if (Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV3(data[i])) != Float.floatToRawIntBits(expected[i])) {
                 throw new IllegalStateException("Wrong result v3 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v4[i] = new FPDecimalV4(false, u[i], n[i]);
-            if (Float.floatToRawIntBits(data_v4[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+            if (Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV4(data[i])) != Float.floatToRawIntBits(expected[i])) {
                 throw new IllegalStateException("Wrong result v4 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v5[i] = new FPDecimalV5(false, u[i], n[i]);
-            if (Float.floatToRawIntBits(data_v5[i].toFloat()) != Float.floatToRawIntBits(expected[i])) {
+            if (Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV5(data[i])) != Float.floatToRawIntBits(expected[i])) {
                 throw new IllegalStateException("Wrong result v5 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-
-/*
-        for (int i = 0; i < N; i++) {
-            long[] v = next(kind, rnd);
-            data_v3[i] = new FPDecimalV3(false, v[0], (int) v[1]);
-            data_v4[i] = new FPDecimalV4(false, v[0], (int) v[1]);
-            ref[i] = new FPDecimal(false, v[0], (int) v[1]);
-
-            // guard: do not measure a wrong implementation
-            float expected = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).floatValue();
-            if (Float.floatToRawIntBits(data_v3[i].toFloat()) != Float.floatToRawIntBits(expected)) {
-                throw new IllegalStateException("Wrong result v3 for units=" + v[0] + " nanos=" + v[1]);
-            }
-            if (Float.floatToRawIntBits(data_v4[i].toFloat()) != Float.floatToRawIntBits(expected)) {
-                throw new IllegalStateException("Wrong result v4 for units=" + v[0] + " nanos=" + v[1]);
+            if (Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV6(data[i])) != Float.floatToRawIntBits(expected[i])) {
+                throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
             }
         }
-*/
     }
 
     @Benchmark
     public void toFloat_V1(Blackhole blackhole) {
-        for (FPDecimal d : ref) {
-            blackhole.consume(d.toFloat());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverterFloat.toFloatV1(d));
         }
     }
 
     @Benchmark
     public void toFloat_V3(Blackhole blackhole) {
-        for (FPDecimalV3 d : data_v3) {
-            blackhole.consume(d.toFloat());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverterFloat.toFloatV3(d));
         }
     }
 
     @Benchmark
     public void toFloat_V4(Blackhole blackhole) {
-        for (FPDecimalV4 d : data_v4) {
-            blackhole.consume(d.toFloat());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverterFloat.toFloatV4(d));
         }
     }
 
     @Benchmark
     public void toFloat_V5(Blackhole blackhole) {
-        for (FPDecimalV5 d : data_v5) {
-            blackhole.consume(d.toFloat());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverterFloat.toFloatV5(d));
+        }
+    }
+
+    @Benchmark
+    public void toFloat_V6(Blackhole blackhole) {
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverterFloat.toFloatV6(d));
         }
     }
 

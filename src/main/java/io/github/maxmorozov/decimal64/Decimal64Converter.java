@@ -1,6 +1,7 @@
 package io.github.maxmorozov.decimal64;
 
 import io.github.maxmorozov.schubfach.Schubfach;
+import io.github.maxmorozov.schubfach.Schubfach.EncodingResult;
 
 public class Decimal64Converter {
 
@@ -19,16 +20,14 @@ public class Decimal64Converter {
     public static long encode(double v) {
         Decimal64Encoder encoder = new Decimal64Encoder();
 
-        int type = Schubfach.encodeDouble(v, encoder);
+        EncodingResult type = Schubfach.encodeDouble(v, encoder);
         return switch (type) {
-            case Schubfach.NON_SPECIAL -> encoder.result();
-            case Schubfach.PLUS_ZERO -> PLUS_ZERO;
-            case Schubfach.MINUS_ZERO -> MINUS_ZERO;
-            case Schubfach.PLUS_INF -> PLUS_INF;
-            case Schubfach.MINUS_INF -> MINUS_INF;
-            case Schubfach.Q_NAN -> Q_NAN;
-            case Schubfach.S_NAN -> S_NAN;
-            default -> throw new IllegalStateException("Unexpected type value: " + type);
+            case NON_SPECIAL -> encoder.result();
+            case PLUS_ZERO -> PLUS_ZERO;
+            case MINUS_ZERO -> MINUS_ZERO;
+            case PLUS_INF -> PLUS_INF;
+            case MINUS_INF -> MINUS_INF;
+            case NAN -> Q_NAN;
         };
     }
 

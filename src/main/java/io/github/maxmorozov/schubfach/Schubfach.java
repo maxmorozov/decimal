@@ -43,6 +43,7 @@ package io.github.maxmorozov.schubfach;
 import static java.lang.Double.*;
 import static java.lang.Float.*;
 import static io.github.maxmorozov.schubfach.Schubfach.MathUtils.*;
+import static java.lang.Math.multiplyHigh;
 
 /**
  * This class exposes methods to decompose a {@double} or {@float} into
@@ -76,14 +77,14 @@ public class Schubfach {
     This is discussed in section 10 of [1].
      */
 
-    public static final int NON_SPECIAL = 0;
-    public static final int PLUS_ZERO = 1;
-    public static final int MINUS_ZERO = 2;
-    public static final int PLUS_INF = 3;
-    public static final int MINUS_INF = 4;
-    public static final int NAN = 5;
-    public static final int Q_NAN = 5;
-    public static final int S_NAN = 6;
+    public enum EncodingResult {
+        NON_SPECIAL,
+        PLUS_ZERO,
+        MINUS_ZERO,
+        PLUS_INF,
+        MINUS_INF,
+        NAN
+    }
 
     public static final int H_FLOAT = 9; // H is as in section 8 of [1].
     public static final int H_DOUBLE = 17; // H is as in section 8 of [1].
@@ -100,7 +101,7 @@ public class Schubfach {
      * MINUS_INF       iff v is NEGATIVE_INFINITY
      * NAN             iff v is NaN
      */
-    public static int encodeFloat(float v, FloatEncoder encoder) {
+    public static EncodingResult encodeFloat(float v, FloatEncoder encoder) {
         return FloatToDecimal.encode(v, encoder);
     }
 
@@ -138,23 +139,6 @@ public class Schubfach {
         return pow10(H - len);
     }
 
-    public static long multiplyHigh(long x, long y) {
-        // Use technique from section 8-2 of Henry S. Warren, Jr.,
-        // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
-        long x1 = x >> 32;
-        long x2 = x & 0xFFFFFFFFL;
-        long y1 = y >> 32;
-        long y2 = y & 0xFFFFFFFFL;
-
-        long z2 = x2 * y2;
-        long t = x1 * y2 + (z2 >>> 32);
-        long z1 = t & 0xFFFFFFFFL;
-        long z0 = t >> 32;
-        z1 += x2 * y1;
-
-        return x1 * y1 + z0 + (z1 >> 32);
-    }
-
     public interface FloatEncoder {
         void encodeFloat(boolean negative, int significand, int exponent);
     }
@@ -171,7 +155,7 @@ public class Schubfach {
      * MINUS_INF       iff v is NEGATIVE_INFINITY
      * NAN             iff v is NaN
      */
-    public static int encodeDouble(double v, DoubleEncoder encoder) {
+    public static EncodingResult encodeDouble(double v, DoubleEncoder encoder) {
         return DoubleToDecimal.encode(v, encoder);
 
     }
@@ -201,7 +185,7 @@ public class Schubfach {
         private FloatToDecimal() {
         }
 
-        private static int encode(float v, FloatEncoder encoder) {
+        private static EncodingResult encode(float v, FloatEncoder encoder) {
             int bits = floatToRawIntBits(v);
             int t = bits & T_MASK;
             int bq = (bits >>> P - 1) & BQ_MASK;
@@ -226,15 +210,16 @@ public class Schubfach {
                             ? toDecimal(negative, Q_MIN, 10 * t, -1, encoder)
                             : toDecimal(negative, Q_MIN, t, 0, encoder);
                 }
-                return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+                return bits == 0 ? EncodingResult.PLUS_ZERO : EncodingResult.MINUS_ZERO;
             }
             if (t != 0) {
-                return (t & QUIET_BIT_MASK) != 0 ? Q_NAN : S_NAN;
+                return EncodingResult.NAN;
+                //return (t & QUIET_BIT_MASK) != 0 ? Q_NAN : S_NAN;
             }
-            return bits > 0 ? PLUS_INF : MINUS_INF;
+            return bits > 0 ? EncodingResult.PLUS_INF : EncodingResult.MINUS_INF;
         }
 
-        private static int toDecimal(boolean negative, int q, int c, int dk, FloatEncoder consumer) {
+        private static EncodingResult toDecimal(boolean negative, int q, int c, int dk, FloatEncoder consumer) {
             int out = c & 0x1;
             long cb = c << 2;
             long cbr = cb + 2;
@@ -286,9 +271,9 @@ public class Schubfach {
             return (int) (vbp | (x1 & MASK_32) + MASK_32 >>> 32);
         }
 
-        private static int encodeDecimal(boolean negative, int f, int e, FloatEncoder encoder) {
+        private static EncodingResult encodeDecimal(boolean negative, int f, int e, FloatEncoder encoder) {
             encoder.encodeFloat(negative, f, e);
-            return NON_SPECIAL;
+            return EncodingResult.NON_SPECIAL;
         }
 
     }
@@ -316,7 +301,7 @@ public class Schubfach {
         private DoubleToDecimal() {
         }
 
-        static int encode(double v, DoubleEncoder encoder) {
+        static EncodingResult encode(double v, DoubleEncoder encoder) {
             long bits = doubleToRawLongBits(v);
             long t = bits & T_MASK;
             int bq = (int) (bits >>> P - 1) & BQ_MASK;
@@ -341,15 +326,16 @@ public class Schubfach {
                             ? toDecimal(negative, Q_MIN, 10 * t, -1, encoder)
                             : toDecimal(negative, Q_MIN, t, 0, encoder);
                 }
-                return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+                return bits == 0 ? EncodingResult.PLUS_ZERO : EncodingResult.MINUS_ZERO;
             }
             if (t != 0) {
-                return (t & QUIET_BIT_MASK) != 0 ? Q_NAN : S_NAN;
+                return EncodingResult.NAN;
+                //return (t & QUIET_BIT_MASK) != 0 ? Q_NAN : S_NAN;
             }
-            return bits > 0 ? PLUS_INF : MINUS_INF;
+            return bits > 0 ? EncodingResult.PLUS_INF : EncodingResult.MINUS_INF;
         }
 
-        private static int toDecimal(boolean negative, int q, long c, int dk, DoubleEncoder encoder) {
+        private static EncodingResult toDecimal(boolean negative, int q, long c, int dk, DoubleEncoder encoder) {
             int out = (int) c & 0x1;
             long cb = c << 2;
             long cbr = cb + 2;
@@ -405,9 +391,9 @@ public class Schubfach {
             return vbp | (z & MASK_63) + MASK_63 >>> 63;
         }
 
-        private static int encodeDecimal(boolean negative, long f, int e, DoubleEncoder encoder) {
+        private static EncodingResult encodeDecimal(boolean negative, long f, int e, DoubleEncoder encoder) {
             encoder.encodeDouble(negative, f, e);
-            return NON_SPECIAL;
+            return EncodingResult.NON_SPECIAL;
         }
 
     }
@@ -424,6 +410,8 @@ public class Schubfach {
         // Must be DoubleToDecimal.H or more
         private static final int H = 17;
 
+        public static final int MAX_POW10_EXPONENT = 18;
+
         // C_10 = floor(log10(2) * 2^Q_10), A_10 = floor(log10(3/4) * 2^Q_10)
         private static final int Q_10 = 41;
         private static final long C_10 = 661971961083L;
@@ -436,7 +424,7 @@ public class Schubfach {
         private MathUtils() {
         }
 
-        // The first powers of 10. The last entry must be 10^H.
+        // The first powers of 10. The last entry must be 10^MAX_POW10_EXPONENT.
         private static final long[] pow10 = {
                 1L,
                 10L,
@@ -456,9 +444,10 @@ public class Schubfach {
                 1000000000000000L,
                 10000000000000000L,
                 100000000000000000L,
+                1000000000000000000L,
         };
 
-        static long pow10(int e) {
+        public static long pow10(int e) {
             return pow10[e];
         }
 

@@ -2,6 +2,8 @@ package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.bigmath.BigMath;
 import io.github.maxmorozov.bigmath.FPRounding;
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +18,7 @@ public class FPDecimalTest {
     @Test
     void testSlowRoundingSmall() {
         FPDecimal decimal = new FPDecimal(false, 18905424454L, 569986343);
-        double d = decimal.toDouble();
+        double d = FPDecimalConverter.toDoubleV1(decimal);
         double ref = Double.parseDouble("18905424454.569986343");
         assertEquals(ref, d);
     }
@@ -24,7 +26,7 @@ public class FPDecimalTest {
     @Test
     void testSlowRoundingBig() {
         FPDecimal decimal = new FPDecimal(false, 9195887603825644031L, 654254728);
-        double d = decimal.toDouble();
+        double d = FPDecimalConverter.toDoubleV1(decimal);
         double ref = Double.parseDouble("9195887603825644031.654254728");
         assertEquals(ref, d);
     }

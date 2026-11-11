@@ -1,6 +1,9 @@
 package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.bigmath.BigMath;
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverterFloat;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -56,9 +59,9 @@ class FPDecimalRoundingTest {
             FPDecimal d = new FPDecimal(neg, units, nanos);
             double ed = neg ? -expD : expD;
             float ef = neg ? -expF : expF;
-            assertEquals(Double.doubleToRawLongBits(ed), Double.doubleToRawLongBits(d.toDouble()),
+            assertEquals(Double.doubleToRawLongBits(ed), Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV1(d)),
                     () -> "toDouble neg=" + neg + " " + ctx);
-            assertEquals(Float.floatToRawIntBits(ef), Float.floatToRawIntBits(d.toFloat()),
+            assertEquals(Float.floatToRawIntBits(ef), Float.floatToRawIntBits(FPDecimalConverterFloat.toFloatV1(d)),
                     () -> "toFloat neg=" + neg + " " + ctx);
         }
     }
@@ -198,15 +201,15 @@ class FPDecimalRoundingTest {
     @Test
     void documentedTies() {
         // q = 2^53 + 1: ничья, m четное -> вниз
-        assertEquals(0x1p44, new FPDecimal(false, 17592186044416L, 1_953_125).toDouble());
+        assertEquals(0x1p44, FPDecimalConverter.toDoubleV1(new FPDecimal(false, 17592186044416L, 1_953_125)));
         // q = 2^53 + 3: ничья, m нечетное -> вверх
-        assertEquals(0x1p44 + 0x1p-7, new FPDecimal(false, 17592186044416L, 5_859_375).toDouble());
+        assertEquals(0x1p44 + 0x1p-7, FPDecimalConverter.toDoubleV1(new FPDecimal(false, 17592186044416L, 5_859_375)));
         // ничья + остаток 1 (m четное) -> вверх за счет sticky
-        assertEquals(0x1p44 + 0x1p-8, new FPDecimal(false, 17592186044416L, 1_953_126).toDouble());
+        assertEquals(0x1p44 + 0x1p-8, FPDecimalConverter.toDoubleV1(new FPDecimal(false, 17592186044416L, 1_953_126)));
         // ничья + остаток 1 (m нечетное) -> вверх
-        assertEquals(0x1p44 + 0x1p-7, new FPDecimal(false, 17592186044416L, 5_859_376).toDouble());
+        assertEquals(0x1p44 + 0x1p-7, FPDecimalConverter.toDoubleV1(new FPDecimal(false, 17592186044416L, 5_859_376)));
         // знак
-        assertEquals(-0x1p44, new FPDecimal(true, 17592186044416L, 1_953_125).toDouble());
+        assertEquals(-0x1p44, FPDecimalConverter.toDoubleV1(new FPDecimal(true, 17592186044416L, 1_953_125)));
     }
 
     @Test

@@ -1,7 +1,5 @@
 package io.github.maxmorozov.bigmath;
 
-import io.github.maxmorozov.decimal.FPDecimal;
-
 /**
  * Implements long division by 1e9 with correct rounding to make double or float.
  * <p>
@@ -201,19 +199,5 @@ public class FPRoundingV3 {
 
         int p = drop + shift - EXP_SHIFT;                      // value ~= m * 2^p
         return Float.intBitsToFloat((int) (((long) (p + EXPONENT_OFFSET_F) << MANTISSA_EXPLICIT_BITS_F) + m));
-    }
-
-    public static void main(String[] args) {
-        FPDecimal decimal1 = new FPDecimal(false, 9007552L, 144953729);
-        FPDecimal decimal2 = new FPDecimal(false, 868298182114L, 104073920);
-        FPDecimal decimal3 = new FPDecimal(false, 24605452552L, 999999999);
-
-        float v = 0;
-        for (int i = 0; i < 50_000; ++i) {
-            v = v + decimal1.toFloat();
-            v = v + decimal2.toFloat();
-            v = v + decimal3.toFloat();
-        }
-
     }
 }

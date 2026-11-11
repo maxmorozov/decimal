@@ -6,6 +6,7 @@ import io.github.maxmorozov.decimal64.Decimal64;
 import io.github.maxmorozov.decimal64.Decimal64Converter;
 import io.github.maxmorozov.schubfach.Schubfach;
 import io.github.maxmorozov.schubfach.Schubfach.DoubleEncoder;
+import io.github.maxmorozov.schubfach.Schubfach.EncodingResult;
 
 public class Main {
 
@@ -72,7 +73,7 @@ public class Main {
     }
 
     private static void testDecimal(boolean negative, long significand, int exponent) {
-        Decimal decimal = new Decimal(negative, significand, exponent, Schubfach.NON_SPECIAL);
+        Decimal decimal = new Decimal(negative, significand, exponent, EncodingResult.NON_SPECIAL);
         testDecimal(decimal);
     }
 

@@ -1,0 +1,117 @@
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              48
+On-line CPU(s) list: 0-47
+Thread(s) per core:  1
+Core(s) per socket:  24
+Socket(s):           2
+NUMA node(s):        2
+Vendor ID:           GenuineIntel
+CPU family:          6
+Model:               85
+Model name:          Intel(R) Xeon(R) Gold 6248R CPU @ 3.00GHz
+Stepping:            7
+CPU MHz:             3100.000
+BogoMIPS:            6000.00
+L1d cache:           32K
+L1i cache:           32K
+L2 cache:            1024K
+L3 cache:            36608K
+NUMA node0 CPU(s):   0-23
+NUMA node1 CPU(s):   24-47
+
+Benchmark                               (kind)  Mode  Cnt   Score    Error  Units
+FPDecimalDoubleBenchmark.toDouble_V1   clinger  avgt   24   5.837 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1        lo  avgt   24   8.579 ±  0.007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1   hi_left  avgt   24  10.016 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1  hi_right  avgt   24   9.555 ±  0.083  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1   hi_both  avgt   24  23.337 ±  0.015  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1  integers  avgt   24  16.415 ±  0.007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1      ties  avgt   24  24.227 ±  0.025  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1     mixed  avgt   24  24.856 ±  0.008  ns/op
+FPDecimalDoubleBenchmark.toDouble_V1      bank  avgt   24   7.444 ±  0.018  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3   clinger  avgt   24   5.836 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3        lo  avgt   24   8.577 ±  0.007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3   hi_left  avgt   24  10.092 ±  0.105  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3  hi_right  avgt   24   9.843 ±  0.008  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3   hi_both  avgt   24  14.438 ±  0.342  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3  integers  avgt   24  14.977 ±  0.104  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3      ties  avgt   24  11.094 ±  0.092  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3     mixed  avgt   24  20.084 ±  0.046  ns/op
+FPDecimalDoubleBenchmark.toDouble_V3      bank  avgt   24   7.270 ±  0.010  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4   clinger  avgt   24   5.838 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4        lo  avgt   24   9.866 ±  0.002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4   hi_left  avgt   24  11.052 ±  0.076  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4  hi_right  avgt   24  10.803 ±  0.003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4   hi_both  avgt   24  11.238 ±  0.071  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4  integers  avgt   24  14.554 ±  0.307  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4      ties  avgt   24  11.589 ±  0.075  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4     mixed  avgt   24  17.309 ±  0.310  ns/op
+FPDecimalDoubleBenchmark.toDouble_V4      bank  avgt   24   7.594 ±  0.013  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   clinger  avgt   24   5.837 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5        lo  avgt   24  11.627 ±  0.003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_left  avgt   24  11.625 ±  0.002  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  hi_right  avgt   24  11.624 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5   hi_both  avgt   24  11.636 ±  0.009  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5  integers  avgt   24  11.799 ±  0.003  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      ties  avgt   24  11.626 ±  0.001  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5     mixed  avgt   24  14.543 ±  0.007  ns/op
+FPDecimalDoubleBenchmark.toDouble_V5      bank  avgt   24   7.735 ±  0.029  ns/op
+FPDecimalFloatBenchmark.toFloat_V1     clinger  avgt   24   2.461 ±  0.048  ns/op
+FPDecimalFloatBenchmark.toFloat_V1      lo_mid  avgt   24  12.704 ±  0.003  ns/op
+FPDecimalFloatBenchmark.toFloat_V1     lo_high  avgt   24  12.930 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V1          hi  avgt   24  12.889 ±  0.011  ns/op
+FPDecimalFloatBenchmark.toFloat_V1    integers  avgt   24  15.485 ±  0.057  ns/op
+FPDecimalFloatBenchmark.toFloat_V1        ties  avgt   24  11.207 ±  0.035  ns/op
+FPDecimalFloatBenchmark.toFloat_V1       mixed  avgt   24  19.423 ±  0.026  ns/op
+FPDecimalFloatBenchmark.toFloat_V1        bank  avgt   24  14.618 ±  0.012  ns/op
+FPDecimalFloatBenchmark.toFloat_V3     clinger  avgt   24   2.491 ±  0.040  ns/op
+FPDecimalFloatBenchmark.toFloat_V3      lo_mid  avgt   24   6.041 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V3     lo_high  avgt   24   5.554 ±  0.093  ns/op
+FPDecimalFloatBenchmark.toFloat_V3          hi  avgt   24   6.441 ±  0.122  ns/op
+FPDecimalFloatBenchmark.toFloat_V3    integers  avgt   24  12.705 ±  0.016  ns/op
+FPDecimalFloatBenchmark.toFloat_V3        ties  avgt   24  10.753 ±  0.025  ns/op
+FPDecimalFloatBenchmark.toFloat_V3       mixed  avgt   24  13.368 ±  0.098  ns/op
+FPDecimalFloatBenchmark.toFloat_V3        bank  avgt   24   8.966 ±  0.017  ns/op
+FPDecimalFloatBenchmark.toFloat_V4     clinger  avgt   24   2.490 ±  0.044  ns/op
+FPDecimalFloatBenchmark.toFloat_V4      lo_mid  avgt   24   6.035 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V4     lo_high  avgt   24   5.570 ±  0.102  ns/op
+FPDecimalFloatBenchmark.toFloat_V4          hi  avgt   24   6.477 ±  0.001  ns/op
+FPDecimalFloatBenchmark.toFloat_V4    integers  avgt   24  11.618 ±  0.012  ns/op
+FPDecimalFloatBenchmark.toFloat_V4        ties  avgt   24   9.985 ±  0.098  ns/op
+FPDecimalFloatBenchmark.toFloat_V4       mixed  avgt   24  11.680 ±  0.013  ns/op
+FPDecimalFloatBenchmark.toFloat_V4        bank  avgt   24   7.085 ±  0.098  ns/op
+FPDecimalFloatBenchmark.toFloat_V5     clinger  avgt   24   3.934 ±  0.001  ns/op
+FPDecimalFloatBenchmark.toFloat_V5      lo_mid  avgt   24   8.262 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V5     lo_high  avgt   24   7.831 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V5          hi  avgt   24   7.926 ±  0.019  ns/op
+FPDecimalFloatBenchmark.toFloat_V5    integers  avgt   24   8.840 ±  0.002  ns/op
+FPDecimalFloatBenchmark.toFloat_V5        ties  avgt   24   7.940 ±  0.001  ns/op
+FPDecimalFloatBenchmark.toFloat_V5       mixed  avgt   24   9.754 ±  0.003  ns/op
+FPDecimalFloatBenchmark.toFloat_V5        bank  avgt   24   9.147 ±  0.001  ns/op
+
+Double
+  (kind)      V1      V3      V4      V5
+ clinger   5.837   5.836   5.838   5.837
+      lo   8.579   8.577   9.866  11.627
+ hi_left  10.016  10.092  11.052  11.625
+hi_right   9.555   9.843  10.803  11.624
+ hi_both  23.337  14.438  11.238  11.636
+integers  16.415  14.977  14.554  11.799
+    ties  24.227  11.094  11.589  11.626
+   mixed  24.856  20.084  17.309  14.543
+    bank   7.444   7.270   7.594   7.735
+
+
+Float
+  (kind)      V1      V3      V4      V5
+ clinger   2.461   2.491   2.490   3.934
+  lo_mid  12.704   6.041   6.035   8.262
+ lo_high  12.930   5.554   5.570   7.831
+      hi  12.889   6.441   6.477   7.926
+integers  15.485  12.705  11.618   8.840
+    ties  11.207  10.753   9.985   7.940
+   mixed  19.423  13.368  11.680   9.754
+    bank  14.618   8.966   7.085   9.147
+

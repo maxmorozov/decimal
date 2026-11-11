@@ -1,5 +1,9 @@
 package io.github.maxmorozov.decimal;
 
+import io.github.maxmorozov.decimal9.Decimal9;
+import io.github.maxmorozov.decimal9.Decimal9Converter;
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
@@ -43,20 +47,14 @@ public class FPDecimalDoubleBenchmark {
     @Param({"clinger", "lo", "hi_left", "hi_right", "hi_both", "integers", "ties", "mixed", "bank"})
     private String kind;
 
-    private FPDecimalV3[] data_v3;
-    private FPDecimalV4[] data_v4;
-    private FPDecimalV5[] data_v5;
-    private FPDecimalV6[] data_v6;
-    private FPDecimal[] ref;
+    private FPDecimal[] data;
+    private Decimal9[] data9;
 
     @Setup
     public void setup() {
         Random rnd = new Random(42);
-        data_v3 = new FPDecimalV3[N];
-        data_v4 = new FPDecimalV4[N];
-        data_v5 = new FPDecimalV5[N];
-        data_v6 = new FPDecimalV6[N];
-        ref = new FPDecimal[N];
+        data = new FPDecimal[N];
+        data9 = new Decimal9[N];
 
         long[] u = new long[N];
         int[] n = new int[N];
@@ -76,70 +74,71 @@ public class FPDecimalDoubleBenchmark {
             }
         }
         for (int i = 0; i < N; i++) {
-            ref[i] = new FPDecimal(neg[i], u[i], n[i]);
-            if (Double.doubleToRawLongBits(ref[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+            data[i] = new FPDecimal(neg[i], u[i], n[i]);
+            data9[i] = neg[i] ? new Decimal9(-u[i], -n[i]) : new Decimal9(u[i], n[i]);
+
+            long expectedBits = Double.doubleToRawLongBits(expected[i]);
+            if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV1(data[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v1 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v3[i] = new FPDecimalV3(neg[i], u[i], n[i]);
-            if (Double.doubleToRawLongBits(data_v3[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+            if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV3(data[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v3 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v4[i] = new FPDecimalV4(neg[i], u[i], n[i]);
-            if (Double.doubleToRawLongBits(data_v4[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+            if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV4(data[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v4 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v5[i] = new FPDecimalV5(neg[i], u[i], n[i]);
-            if (Double.doubleToRawLongBits(data_v5[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+            if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV5(data[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v5 for units=" + u[i] + " nanos=" + n[i]);
             }
-        }
-        for (int i = 0; i < N; i++) {
-            data_v6[i] = new FPDecimalV6(neg[i], u[i], n[i]);
-            if (Double.doubleToRawLongBits(data_v6[i].toDouble()) != Double.doubleToRawLongBits(expected[i])) {
+            if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV6(data[i])) != expectedBits) {
+                throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
+            }
+
+            if (Double.doubleToRawLongBits(Decimal9Converter.toDouble(data9[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
             }
         }
-
     }
 
     @Benchmark
     public void toDouble_V1(Blackhole blackhole) {
-        for (FPDecimal d : ref) {
-            blackhole.consume(d.toDouble());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverter.toDoubleV1(d));
         }
     }
 
     @Benchmark
     public void toDouble_V3(Blackhole blackhole) {
-        for (FPDecimalV3 d : data_v3) {
-            blackhole.consume(d.toDouble());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverter.toDoubleV3(d));
         }
     }
 
     @Benchmark
     public void toDouble_V4(Blackhole blackhole) {
-        for (FPDecimalV4 d : data_v4) {
-            blackhole.consume(d.toDouble());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverter.toDoubleV4(d));
         }
     }
 
     @Benchmark
     public void toDouble_V5(Blackhole blackhole) {
-        for (FPDecimalV5 d : data_v5) {
-            blackhole.consume(d.toDouble());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverter.toDoubleV5(d));
         }
     }
 
     @Benchmark
     public void toDouble_V6(Blackhole blackhole) {
-        for (FPDecimalV6 d : data_v6) {
-            blackhole.consume(d.toDouble());
+        for (FPDecimal d : data) {
+            blackhole.consume(FPDecimalConverter.toDoubleV6(d));
+        }
+    }
+
+    @Benchmark
+    public void toDouble_Decimal9(Blackhole blackhole) {
+        for (Decimal9 d : data9) {
+            blackhole.consume(Decimal9Converter.toDouble(d));
         }
     }
 

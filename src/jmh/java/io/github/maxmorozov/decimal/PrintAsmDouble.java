@@ -1,34 +1,34 @@
 package io.github.maxmorozov.decimal;
 
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
+
 import java.util.Random;
 
 public class PrintAsmDouble {
     public static void main(String[] args) {
         Random rnd = new Random(42);
         FPDecimal[] data = new FPDecimal[4096];
-        FPDecimalV3[] data_v3 = new FPDecimalV3[4096];
-        FPDecimalV4[] data_v4 = new FPDecimalV4[4096];
-        FPDecimalV5[] data_v5 = new FPDecimalV5[4096];
         for (int i = 0; i < data.length; i++) {
             long[] v = FPDecimalDoubleBenchmark.next("mixed", rnd);
             data[i] = new FPDecimal(false, v[0], (int) v[1]);
-            data_v3[i] = new FPDecimalV3(false, v[0], (int) v[1]);
-            data_v4[i] = new FPDecimalV4(false, v[0], (int) v[1]);
-            data_v5[i] = new FPDecimalV5(false, v[0], (int) v[1]);
         }
         double sum = 0;
         for (int rep = 0; rep < 500; rep++) {          // ~2 млн вызовов: хватит и для C1, и для C2
             for (FPDecimal d : data) {
-                sum += d.toDouble();
+                sum += FPDecimalConverter.toDoubleV1(d);
             }
-            for (FPDecimalV3 d : data_v3) {
-                sum += d.toDouble();
+            for (FPDecimal d : data) {
+                sum += FPDecimalConverter.toDoubleV3(d);
             }
-            for (FPDecimalV4 d : data_v4) {
-                sum += d.toDouble();
+            for (FPDecimal d : data) {
+                sum += FPDecimalConverter.toDoubleV4(d);
             }
-            for (FPDecimalV5 d : data_v5) {
-                sum += d.toDouble();
+            for (FPDecimal d : data) {
+                sum += FPDecimalConverter.toDoubleV5(d);
+            }
+            for (FPDecimal d : data) {
+                sum += FPDecimalConverter.toDoubleV6(d);
             }
         }
         System.out.println(sum);                       // чтобы цикл не вырезали

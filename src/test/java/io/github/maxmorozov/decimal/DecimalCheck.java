@@ -1,6 +1,9 @@
 package io.github.maxmorozov.decimal;
 
 import io.github.maxmorozov.bigmath.BigMath;
+import io.github.maxmorozov.fpdecimal.FPDecimal;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
+import io.github.maxmorozov.fpdecimal.FPDecimalConverterFloat;
 
 import java.math.BigInteger;
 import java.util.Random;
@@ -17,8 +20,8 @@ public class DecimalCheck {
         String s = str(neg, units, nanos);
         double refD = Double.parseDouble(s);
         float refF = Float.parseFloat(s);
-        double gotD = d.toDouble();
-        float gotF = d.toFloat();
+        double gotD = FPDecimalConverter.toDoubleV1(d);
+        float gotF = FPDecimalConverterFloat.toFloatV1(d);
         n++;
         if (Double.doubleToRawLongBits(refD) != Double.doubleToRawLongBits(gotD)
                 || Float.floatToRawIntBits(refF) != Float.floatToRawIntBits(gotF)) {
@@ -50,8 +53,8 @@ public class DecimalCheck {
         check(false, Long.MAX_VALUE, 0);
         check(false, 9007199254740993L, 0);                         // 2^53 + 1: exact tie for double
         check(false, 16777217L, 0);                                  // 2^24 + 1: exact tie for float
-        System.out.println("9007199254740993 -> " + new FPDecimal(false, 9007199254740993L, 0).toDouble());
-        System.out.println("8.1 -> " + new FPDecimal(false, 8, 100_000_000).toDouble() + " / " + new FPDecimal(false, 8, 100_000_000).toFloat());
+        System.out.println("9007199254740993 -> " + FPDecimalConverter.toDoubleV1(new FPDecimal(false, 9007199254740993L, 0)));
+        System.out.println("8.1 -> " + FPDecimalConverter.toDoubleV1(new FPDecimal(false, 8, 100_000_000)) + " / " + FPDecimalConverterFloat.toFloatV1(new FPDecimal(false, 8, 100_000_000)));
 
         for (int i = 0; i < 3_000_000; i++) {                        // random magnitudes
             int bits = r.nextInt(64);
