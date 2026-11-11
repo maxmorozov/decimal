@@ -69,6 +69,24 @@ public final class FPRoundingFloat {
         return roundFloat(w, sticky, 65 - z);
     }
 
+    /**
+     * toFloatNanosFlatMask with a single shift in the funnel: for hi != 0 we have hi < 2^29, so zz >= 35 and
+     * 64 - zz is in [1; 29]; for hi == 0 loN is 0 and the result of this shift does not matter.
+     */
+    public static float toFloatNanosFlatMask1(long hi, long lo) {
+        long nz = (hi | -hi) >> 63;
+        long hiN = hi | (lo & ~nz);
+        long loN = lo & nz;
+        int zz = Long.numberOfLeadingZeros(hiN);
+        long h = (hiN << zz) | (loN >>> (64 - zz));
+        long l = loN << zz;
+        int z = zz + (int) (~nz & 64);
+
+        long w = h >>> 1;
+        boolean sticky = (l | (h & 1)) != 0;
+        return roundFloat(w, sticky, 65 - z);
+    }
+
     private static float roundFloat(long w, boolean sticky, int shift) {
         long q = w / D5_9;                                    // 42 or 43 bits
         sticky |= w != q * D5_9;                              // remainder of division != 0

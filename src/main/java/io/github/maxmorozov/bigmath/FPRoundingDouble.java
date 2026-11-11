@@ -212,6 +212,40 @@ public final class FPRoundingDouble {
     }
 
     /**
+     * toDoubleNanosFlatBranchless with L = 23 instead of 22: for W >= 2^53 (the only domain of this method)
+     * t = sh + 23 is in [1; 40], never 0, so the right funnel shift needs one shift, not two:
+     * h0 << (64 - t) with 64 - t in [24; 63].
+     */
+    public static double toDoubleNanosFlatBranchless23(long hi, long lo) {
+        int nlzHi = Long.numberOfLeadingZeros(hi);
+        int nlz = nlzHi + (-(nlzHi >>> 6) & Long.numberOfLeadingZeros(lo));
+        int sh = (128 - nlz) - NORM_BITS_D;                    // -22..17 for W >= 2^53
+        long h0 = (hi << 23) | (lo >>> 41);                    // W << 23, at most 116 bits
+        long l0 = lo << 23;
+        int t = sh + 23;                                       // 1..40
+        long lost = l0 & ((1L << t) - 1);
+        long l = (l0 >>> t) | (h0 << (64 - t));
+        long h = h0 >>> t;
+
+        long cur = (h << 32) | (l >>> 32);
+        long q1 = cur / D5_9;
+        long r = cur - q1 * D5_9;
+        cur = (r << 32) | (l & 0xFFFFFFFFL);
+        long q0 = cur / D5_9;
+        r = cur - q0 * D5_9;
+        long q = (q1 << 32) | q0;
+        long x = lost | r;
+        long sticky = (x | -x) >>> 63;
+
+        int drop = MANTISSA_DROP_D + (int) (q >>> Q_MIN_BITS_D);
+        long half = 1L << (drop - 1);
+        long add = half - 1 + (((q >>> drop) | sticky) & 1);
+        long m = (q + add) >>> drop;
+        int p = drop + sh - EXP_SHIFT;
+        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET_D) << MANTISSA_EXPLICIT_BITS_D) + m);
+    }
+
+    /**
      * lo (unsigned) * 10^-9 -> double for hi == 0 and lo > 2^53 (for lo <= 2^53 use (double) lo / 1e9),
      * round-half-even.
      * <p>
