@@ -1,0 +1,42 @@
+V1
+        int nlzHi = Long.numberOfLeadingZeros(hi);
+        int nlz = nlzHi + (-(nlzHi >>> 6) & Long.numberOfLeadingZeros(lo));
+        int sh = (128 - nlz) - NORM_BITS;
+
+V2
+        int bits = hi != 0 ? 128 - Long.numberOfLeadingZeros(hi)
+                : 64 - Long.numberOfLeadingZeros(lo);
+        int sh = bits - NORM_BITS;
+
+
+Benchmark                                        (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_Decimal9      clinger  avgt   24  3,083 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9           lo  avgt   24  5,220 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_left  avgt   24  5,220 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     hi_right  avgt   24  5,217 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_both  avgt   24  5,214 ± 0,002  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     integers  avgt   24  0,657 ± 0,010  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         ties  avgt   24  5,285 ± 0,037  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9        mixed  avgt   24  7,374 ± 0,012  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         bank  avgt   24  3,100 ± 0,009  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   clinger  avgt   24  3,089 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2        lo  avgt   24  4,960 ± 0,006  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_left  avgt   24  5,132 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  hi_right  avgt   24  5,135 ± 0,010  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_both  avgt   24  5,141 ± 0,006  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  integers  avgt   24  0,672 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      ties  avgt   24  5,019 ± 0,010  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2     mixed  avgt   24  8,211 ± 0,020  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      bank  avgt   24  3,060 ± 0,018  ns/op
+
+
+  (kind)     V1     V2
+ clinger  3,083  3,089
+      lo  5,220  4,960
+ hi_left  5,220  5,132
+hi_right  5,217  5,135
+ hi_both  5,214  5,141
+integers  0,657  0,672
+    ties  5,285  5,019
+   mixed  7,374  8,211
+    bank  3,100  3,060
