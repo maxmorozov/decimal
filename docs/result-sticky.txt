@@ -1,0 +1,69 @@
+V1
+        long lost = l0 & ((1L << t) - 1);
+V2
+        long lost = l0 << (64 - t);
+
+Benchmark                                        (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_Decimal9      clinger  avgt   24  3,075 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9           lo  avgt   24  5,300 ± 0,215  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_left  avgt   24  5,306 ± 0,147  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     hi_right  avgt   24  5,227 ± 0,013  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_both  avgt   24  5,245 ± 0,064  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     integers  avgt   24  0,671 ± 0,006  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         ties  avgt   24  5,247 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9        mixed  avgt   24  7,421 ± 0,086  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         bank  avgt   24  3,110 ± 0,025  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   clinger  avgt   24  3,084 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2        lo  avgt   24  5,525 ± 0,054  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_left  avgt   24  5,539 ± 0,077  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  hi_right  avgt   24  5,493 ± 0,005  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_both  avgt   24  5,519 ± 0,048  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  integers  avgt   24  0,667 ± 0,011  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      ties  avgt   24  5,181 ± 0,018  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2     mixed  avgt   24  7,435 ± 0,050  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      bank  avgt   24  3,062 ± 0,026  ns/op
+
+
+  (kind)     V1     V2
+ clinger  3,075  3,084
+      lo  5,300  5,525
+ hi_left  5,306  5,539
+hi_right  5,227  5,493
+ hi_both  5,245  5,519
+integers  0,671  0,667
+    ties  5,247  5,181
+   mixed  7,421  7,435
+    bank  3,110  3,062
+
+
+Benchmark                                        (kind)  Mode  Cnt  Score   Error  Units
+FPDecimalDoubleBenchmark.toDouble_Decimal9      clinger  avgt   24  3,083 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9           lo  avgt   24  5,220 ± 0,012  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_left  avgt   24  5,246 ± 0,034  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     hi_right  avgt   24  5,217 ± 0,005  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9      hi_both  avgt   24  5,221 ± 0,016  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9     integers  avgt   24  0,667 ± 0,010  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         ties  avgt   24  5,259 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9        mixed  avgt   24  7,386 ± 0,024  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9         bank  avgt   24  3,096 ± 0,016  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   clinger  avgt   24  3,085 ± 0,003  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2        lo  avgt   24  5,509 ± 0,019  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_left  avgt   24  5,511 ± 0,015  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  hi_right  avgt   24  5,505 ± 0,004  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2   hi_both  avgt   24  5,505 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2  integers  avgt   24  0,663 ± 0,007  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      ties  avgt   24  5,172 ± 0,019  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2     mixed  avgt   24  7,417 ± 0,015  ns/op
+FPDecimalDoubleBenchmark.toDouble_Decimal9_V2      bank  avgt   24  3,058 ± 0,010  ns/op
+
+
+  (kind)     V1     V2
+ clinger  3,083  3,085
+      lo  5,220  5,509
+ hi_left  5,246  5,511
+hi_right  5,217  5,505
+ hi_both  5,221  5,505
+integers  0,667  0,663
+    ties  5,259  5,172
+   mixed  7,386  7,417
+    bank  3,096  3,058
