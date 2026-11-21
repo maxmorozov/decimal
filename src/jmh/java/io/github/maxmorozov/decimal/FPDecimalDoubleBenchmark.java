@@ -15,6 +15,9 @@ import java.math.BigInteger;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import static io.github.maxmorozov.decimal.DoubleBenchmarkSupport.isNegative;
+import static io.github.maxmorozov.decimal.DoubleBenchmarkSupport.next;
+
 /**
  * Double benchmark. Data sets are split by the code path of FPDecimal.toDouble() and are generated in random
  * order (no short repeating sequence for the branch predictor to memorize). The score is ns per value.
@@ -48,13 +51,11 @@ public class FPDecimalDoubleBenchmark {
     private String kind;
 
     private FPDecimal[] data;
-    private Decimal9[] data9;
 
     @Setup
     public void setup() {
         Random rnd = new Random(42);
         data = new FPDecimal[N];
-        data9 = new Decimal9[N];
 
         long[] u = new long[N];
         int[] n = new int[N];
@@ -66,7 +67,7 @@ public class FPDecimalDoubleBenchmark {
             n[i] = (int) v[1];
             // "mixed" also contains negative values: the sign handling is a data-dependent branch,
             // and a profile without negatives compiles it into an uncommon trap
-            neg[i] = kind.equals("mixed") && rnd.nextBoolean();
+            neg[i] = isNegative(kind, rnd);
             // guard: do not measure a wrong implementation
             expected[i] = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).doubleValue();
             if (neg[i]) {
@@ -75,7 +76,6 @@ public class FPDecimalDoubleBenchmark {
         }
         for (int i = 0; i < N; i++) {
             data[i] = new FPDecimal(neg[i], u[i], n[i]);
-            data9[i] = neg[i] ? new Decimal9(-u[i], -n[i]) : new Decimal9(u[i], n[i]);
 
             long expectedBits = Double.doubleToRawLongBits(expected[i]);
             if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV1(data[i])) != expectedBits) {
@@ -91,10 +91,6 @@ public class FPDecimalDoubleBenchmark {
                 throw new IllegalStateException("Wrong result v5 for units=" + u[i] + " nanos=" + n[i]);
             }
             if (Double.doubleToRawLongBits(FPDecimalConverter.toDoubleV6(data[i])) != expectedBits) {
-                throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
-            }
-
-            if (Double.doubleToRawLongBits(Decimal9Converter.toDouble(data9[i])) != expectedBits) {
                 throw new IllegalStateException("Wrong result v6 for units=" + u[i] + " nanos=" + n[i]);
             }
         }
@@ -132,90 +128,6 @@ public class FPDecimalDoubleBenchmark {
     public void toDouble_V6(Blackhole blackhole) {
         for (FPDecimal d : data) {
             blackhole.consume(FPDecimalConverter.toDoubleV6(d));
-        }
-    }
-
-    @Benchmark
-    public void toDouble_Decimal9(Blackhole blackhole) {
-        for (Decimal9 d : data9) {
-            blackhole.consume(Decimal9Converter.toDouble(d));
-        }
-    }
-
-    // ------------------------------------------------------------------ data generation
-
-    /**
-     * Returns {units, nanos}.
-     */
-    public static long[] next(String kind, Random rnd) {
-        return switch (kind) {
-            case "clinger" -> random(rnd, 1, 53, 0.0);
-            case "lo" -> random(rnd, 54, 64, 0.0);
-            case "hi_left" -> random(rnd, 65, 76, 0.0);
-            case "hi_right" -> random(rnd, 77, 93, 0.0);
-            case "hi_both" -> random(rnd, 65, 93, 0.0);
-            case "integers" -> random(rnd, 31, 93, 1.0);
-            case "ties" -> tie(rnd);
-            case "mixed" -> {
-                String[] kinds = {"clinger", "lo", "hi_left", "hi_right", "integers", "ties"};
-                yield next(kinds[rnd.nextInt(kinds.length)], rnd);
-            }
-            case "bank" -> bank(rnd);
-            default -> throw new IllegalArgumentException(kind);
-        };
-    }
-
-    /**
-     * Random W = units * 10^9 + nanos with the bit length in [minBits; maxBits].
-     * With the probability integerShare the value is rounded down to nanos == 0.
-     */
-    private static long[] random(Random rnd, int minBits, int maxBits, double integerShare) {
-        while (true) {
-            int bits = minBits + rnd.nextInt(maxBits - minBits + 1);
-            BigInteger w = new BigInteger(bits - 1, rnd).setBit(bits - 1);
-            if (rnd.nextDouble() < integerShare) {
-                w = w.divide(E9).multiply(E9);
-            }
-            if (w.signum() == 0 || w.compareTo(MAX_W) > 0) {
-                continue;
-            }
-            return split(w);
-        }
-    }
-
-    /**
-     * W = 5^9 * q + extra, q = (2m + 1) * 2^(drop - 1) with a 53-bit m: W / 10^9 = q / 2^9 is exactly halfway
-     * between two doubles when extra == 0, and one unit of W below/above that point otherwise.
-     */
-    private static long[] tie(Random rnd) {
-        while (true) {
-            long m = (1L << 52) + Math.floorMod(rnd.nextLong(), 1L << 52);
-            int drop = 1 + rnd.nextInt(19);                       // q < 2^72
-            BigInteger q = BigInteger.valueOf(m).shiftLeft(drop).or(BigInteger.ONE.shiftLeft(drop - 1));
-            BigInteger w = q.multiply(D).add(BigInteger.valueOf(rnd.nextInt(3) - 1));
-            if (w.compareTo(MAX_W) <= 0) {
-                return split(w);
-            }
-        }
-    }
-
-    private static long[] split(BigInteger w) {
-        BigInteger[] qr = w.divideAndRemainder(E9);
-        return new long[]{qr[0].longValueExact(), qr[1].longValueExact()};
-    }
-
-    private static long[] bank(Random rnd) {
-        int r = rnd.nextInt(100);
-        if (r < 55) {                                         // FX rates and prices, 4..6 decimals
-            long units = rnd.nextInt(r < 20 ? 3 : 200_000);
-            int digits = 4 + rnd.nextInt(3);
-            int scale = (int) Math.pow(10, 9 - digits);
-            return new long[]{units, (long) rnd.nextInt((int) Math.pow(10, digits)) * scale};
-        } else if (r < 95) {                                  // amounts with 2 decimals, up to ~3e10
-            long units = Math.floorMod(rnd.nextLong(), 1L << (10 + rnd.nextInt(26)));
-            return new long[]{units, rnd.nextInt(100) * 10_000_000L};
-        } else {                                              // large notionals without decimals
-            return new long[]{Math.floorMod(rnd.nextLong(), 1L << (30 + rnd.nextInt(33))), 0};
         }
     }
 

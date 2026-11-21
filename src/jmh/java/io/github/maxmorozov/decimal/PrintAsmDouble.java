@@ -17,8 +17,8 @@ public class PrintAsmDouble {
         Decimal9[] data9 = new Decimal9[N];
         String kind = "mixed";
         for (int i = 0; i < data9.length; i++) {
-            long[] v = FPDecimalDoubleBenchmark.next(kind, rnd);
-            boolean neg = kind.equals("mixed") && rnd.nextBoolean();
+            long[] v = DoubleBenchmarkSupport.next(kind, rnd);
+            boolean neg = DoubleBenchmarkSupport.isNegative(kind, rnd);
             data[i] = new FPDecimal(neg, v[0], (int) v[1]);
             data9[i] = neg ? new Decimal9(-v[0], -(int) v[1]) : new Decimal9(v[0], (int) v[1]);
         }

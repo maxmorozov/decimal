@@ -1,0 +1,10 @@
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  4,073 ± 0,007  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  7,298 ± 0,019  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  7,294 ± 0,018  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  7,282 ± 0,027  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  7,572 ± 0,143  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,633 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  7,026 ± 0,006  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  7,350 ± 0,005  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  5,944 ± 0,004  ns/op

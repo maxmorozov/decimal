@@ -12,8 +12,9 @@ repositories {
 
 jmh {
     jmhVersion = "1.37"
-    includes = ["FPDecimal(Float|Double)Benchmark"]
+    //includes = ["FPDecimal(Float|Double)Benchmark"]
     //includes = ["ClingerBenchmark"]
+    includes = ["Decimal9Benchmark"]
 }
 
 dependencies {
