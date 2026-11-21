@@ -1,0 +1,28 @@
+10% отрицательных чисел
+
+Исходная версия
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  3,105 ± 0,002  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  5,741 ± 0,007  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  5,734 ± 0,005  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  5,740 ± 0,003  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  5,773 ± 0,031  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,630 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,681 ± 0,006  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,020 ± 0,017  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,753 ± 0,004  ns/op
+
+Исходная версия
+V2
+        long lost = l0 << (64 - t);
+
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  3,106 ± 0,002  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  5,618 ± 0,009  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  5,622 ± 0,007  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  5,625 ± 0,006  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  5,621 ± 0,008  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,635 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,605 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,007 ± 0,011  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,695 ± 0,003  ns/op

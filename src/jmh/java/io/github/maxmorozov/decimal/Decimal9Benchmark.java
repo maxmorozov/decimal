@@ -57,6 +57,8 @@ public class Decimal9Benchmark {
             long[] v = next(kind, rnd);
             u[i] = v[0];
             n[i] = (int) v[1];
+            // 10% negatives
+            // neg[i] = rnd.nextInt(10) == 1;
             neg[i] = rnd.nextBoolean();
             // guard: do not measure a wrong implementation
             expected[i] = new BigDecimal(v[0]).add(BigDecimal.valueOf(v[1], 9)).doubleValue();

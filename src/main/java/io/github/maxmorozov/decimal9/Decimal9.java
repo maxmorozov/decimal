@@ -1,6 +1,8 @@
 package io.github.maxmorozov.decimal9;
 
 /**
+ * A decimal number with a scale of 9, represented as whole units and
+ * a signed fractional part in nano-units.
  *
  * @param units The whole units of the amount
  * @param nanos Number of nano (10^-9) units of the amount.

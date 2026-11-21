@@ -83,7 +83,7 @@ public final class RoundingDouble {
         long l0 = lo << L;
         int t = sh + L;
         // The low-order bits of l0, which were dropped by the right shift, are used to compute the "sticky" bit.
-        long lost = l0 & ((1L << t) - 1);
+        long lost = l0 << (64 - t);
         // Java masks the shift distance to 6 bits, so h0 << 64 would be h0 << 0; t >= 1 keeps 64 - t in [24; 63].
         long l = (l0 >>> t) | (h0 << (64 - t));
         long h = h0 >>> t;

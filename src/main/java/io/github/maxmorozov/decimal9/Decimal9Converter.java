@@ -1,6 +1,5 @@
 package io.github.maxmorozov.decimal9;
 
-import io.github.maxmorozov.decimal.Decimal;
 import io.github.maxmorozov.schubfach.Schubfach;
 import io.github.maxmorozov.schubfach.Schubfach.EncodingResult;
 
@@ -15,11 +14,11 @@ public final class Decimal9Converter {
     private Decimal9Converter() {}
 
     /**
-     * Converts a {@code double} to a {@link Decimal}: the shortest decimal that uniquely identifies {@code v}, rounded
+     * Converts a {@code double} to a {@link Decimal9}: the shortest decimal that uniquely identifies {@code v}, rounded
      * half-up to 9 fractional digits. Values below half a nano in magnitude become zero, losing the sign.
      *
      * @param v the value to convert
-     * @return the Decimal representation of {@code v}
+     * @return the {@link Decimal9} representation of {@code v}
      * @throws IllegalArgumentException if {@code v} is NaN, infinite, or its magnitude is at least 2^63
      */
     public static Decimal9 fromDouble(double v) {
@@ -35,13 +34,13 @@ public final class Decimal9Converter {
     }
 
     /**
-     * Converts a {@link Decimal} to the nearest {@code double} (round-half-even).
+     * Converts a {@link Decimal9} to the nearest {@code double} (round-half-even).
      *
      * <p>A Decimal received from a client is client input: a service should catch the {@link IllegalArgumentException}
      * and fail the call with {@code INVALID_ARGUMENT}, otherwise the framework reports it as {@code UNKNOWN}.
      *
-     * @param value the Decimal value to convert
-     * @return the double representation of the Decimal value
+     * @param value the {@link Decimal9} value to convert
+     * @return the double representation of the {@link Decimal9} value
      * @throws IllegalArgumentException if {@code units} and {@code nanos} have different signs, or {@code nanos} is
      *     outside [-999,999,999; 999,999,999]
      */

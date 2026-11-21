@@ -1,7 +1,5 @@
 package io.github.maxmorozov.decimal;
 
-import io.github.maxmorozov.decimal9.Decimal9;
-import io.github.maxmorozov.decimal9.Decimal9Converter;
 import io.github.maxmorozov.fpdecimal.FPDecimal;
 import io.github.maxmorozov.fpdecimal.FPDecimalConverter;
 import org.openjdk.jmh.annotations.*;
@@ -11,7 +9,6 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -41,11 +38,6 @@ import static io.github.maxmorozov.decimal.DoubleBenchmarkSupport.next;
 public class FPDecimalDoubleBenchmark {
 
     static final int N = 262144;
-
-    private static final BigInteger E9 = BigInteger.valueOf(1_000_000_000L);
-    private static final BigInteger D = BigInteger.valueOf(1_953_125L);          // 5^9
-    private static final BigInteger MAX_W = BigInteger.valueOf(Long.MAX_VALUE)
-            .multiply(E9).add(BigInteger.valueOf(999_999_999L));
 
     @Param({"clinger", "lo", "hi_left", "hi_right", "hi_both", "integers", "ties", "mixed", "bank"})
     private String kind;
