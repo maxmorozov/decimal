@@ -3,6 +3,7 @@ package io.github.maxmorozov.decimal9;
 import io.github.maxmorozov.schubfach.Schubfach;
 import io.github.maxmorozov.schubfach.Schubfach.EncodingResult;
 
+import static io.github.maxmorozov.decimal9.RoundingDouble.flipSign;
 import static io.github.maxmorozov.decimal9.RoundingDouble.scaleToDouble;
 
 public final class Decimal9Converter {
@@ -41,7 +42,7 @@ public final class Decimal9Converter {
      */
     public static double toDouble(Decimal9 value) {
         long units = value.units();
-        int nanos = value.nanos();
+        long nanos = value.nanos();
 
         // Handle Long.MIN_VALUE separately, because we will work with positive significand,
         // but -Long.MIN_VALUE does not fit into 64 bits
@@ -54,11 +55,9 @@ public final class Decimal9Converter {
             return units;
         }
 
-        boolean negative = units < 0 || nanos < 0;
-        if (negative) {
-            units = -units;
-            nanos = -nanos;
-        }
+        long sign = (units | nanos) >> 63;                 // 0 or -1
+        units  = flipSign(units, sign);
+        nanos = flipSign(nanos, sign);
 
         // W = units * 10^9 + nanos as an unsigned 128-bit integer (hi:lo); value = W * 10^-9.
         // W < 2^63 * 10^9 + 10^9 < 2^93, so it never overflows 128 bits.
@@ -69,9 +68,7 @@ public final class Decimal9Converter {
             ++hi;
         }
 
-        double v = scaleToDouble(hi, lo);
-
-        return negative ? -v : v;
+        return scaleToDouble(hi, lo, sign);
     }
 
     private static Decimal9 getDecimal(DecimalEncoder encoder, EncodingResult type) {

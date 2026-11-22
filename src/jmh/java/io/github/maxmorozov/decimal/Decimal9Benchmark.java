@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.maxmorozov.decimal.DoubleBenchmarkSupport.isNegative;
 import static io.github.maxmorozov.decimal.DoubleBenchmarkSupport.next;
 
 /**

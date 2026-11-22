@@ -8,3 +8,34 @@ Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,633 ± 0,001  ns/op
 Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  7,026 ± 0,006  ns/op
 Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  7,350 ± 0,005  ns/op
 Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  5,944 ± 0,004  ns/op
+
+V1
+        long lost = l0 & ((1L << t) - 1);
+
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  3,070 ± 0,005  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  6,145 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  6,144 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  6,143 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  6,146 ± 0,009  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,633 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,993 ± 0,015  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,254 ± 0,005  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,493 ± 0,003  ns/op
+
+V2
+        long lost = l0 << (64 - t);
+
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  3,070 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  6,072 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  6,071 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  6,070 ± 0,006  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  6,071 ± 0,003  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,634 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,859 ± 0,008  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,223 ± 0,026  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,477 ± 0,016  ns/op
+
+
+

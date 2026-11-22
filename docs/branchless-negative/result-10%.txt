@@ -26,3 +26,19 @@ Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,635 ± 0,001  ns/op
 Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,605 ± 0,004  ns/op
 Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,007 ± 0,011  ns/op
 Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,695 ± 0,003  ns/op
+
+
+branchless обработка отрицательных чисел
+V2
+        long lost = l0 << (64 - t);
+
+Benchmark                              (kind)  Mode  Cnt  Score   Error  Units
+Decimal9Benchmark.toDouble_Decimal9   clinger  avgt   24  3,070 ± 0,004  ns/op
+Decimal9Benchmark.toDouble_Decimal9        lo  avgt   24  6,072 ± 0,003  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_left  avgt   24  6,071 ± 0,002  ns/op
+Decimal9Benchmark.toDouble_Decimal9  hi_right  avgt   24  6,066 ± 0,006  ns/op
+Decimal9Benchmark.toDouble_Decimal9   hi_both  avgt   24  6,062 ± 0,007  ns/op
+Decimal9Benchmark.toDouble_Decimal9  integers  avgt   24  0,633 ± 0,001  ns/op
+Decimal9Benchmark.toDouble_Decimal9      ties  avgt   24  5,852 ± 0,008  ns/op
+Decimal9Benchmark.toDouble_Decimal9     mixed  avgt   24  6,225 ± 0,022  ns/op
+Decimal9Benchmark.toDouble_Decimal9      bank  avgt   24  3,463 ± 0,004  ns/op

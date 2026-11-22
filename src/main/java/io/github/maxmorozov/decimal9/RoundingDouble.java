@@ -44,20 +44,35 @@ final class RoundingDouble {
      *
      * @param hi the high 64 bits of the unsigned integer
      * @param lo the low 64 bits of the unsigned integer
+     * @param sign the value sign. 0 for positive and -1 for negative numbers.
      * @return the scaled double value
      */
-    static double scaleToDouble(long hi, long lo) {
+    static double scaleToDouble(long hi, long lo, long sign) {
         if ((hi | (lo >>> PRECISION)) == 0) {
             // We start with a fast path
             // It was described in Clinger WD.
             // How to read floating point numbers accurately.
             // ACM SIGPLAN Notices. 1990
             // W and 10^9 are both exact in double -> one correctly rounded division
-            return lo / 1e9;
+            return flipSign(lo, sign) / 1e9;
         } else {
             // W has 54..93 bits
-            return toDoubleNanos(hi, lo);
+            long bits = toDoubleBitsNanos(hi, lo);
+            return Double.longBitsToDouble(bits | (sign & Long.MIN_VALUE));
         }
+    }
+
+    /**
+     * Applies the specified sign mask to the value.
+     *
+     * @param value the value whose sign is to be set
+     * @param sign  the sign mask: {@code 0} to preserve the value,
+     *              or {@code -1} to negate it
+     * @return {@code value} if {@code sign == 0}, or {@code -value}
+     * if {@code sign == -1}
+     */
+    static long flipSign(long value, long sign) {
+        return (value ^ sign) - sign;
     }
 
     /**
@@ -70,7 +85,7 @@ final class RoundingDouble {
      * <p>Without anything the JIT can turn into a data-dependent branch: the leading zeros of the 128-bit W and the
      * sticky bit are computed arithmetically.
      */
-    private static double toDoubleNanos(long hi, long lo) {
+    private static long toDoubleBitsNanos(long hi, long lo) {
         // Normalizing the 128-bit W = (hi:lo) to W' = (h:l) in [2^75; 2^76) by shifting left or right
         // by sh = bits - 76.
         // W has bits = 54..93, so sh = bits - 76 lies in the range [-22; 17].
@@ -123,6 +138,6 @@ final class RoundingDouble {
         // instead of calculating m', we can add 53 bit of m to the exponent
         // double value bits = (E << 52) | m' = ((E - 1) << 52) + m
         // a carry (m == 2^53) increments the exponent and zeroes the mantissa, which is the correct result
-        return Double.longBitsToDouble(((long) (p + EXPONENT_OFFSET) << MANTISSA_EXPLICIT_BITS) + m);
+        return ((long) (p + EXPONENT_OFFSET) << MANTISSA_EXPLICIT_BITS) + m;
     }
 }
