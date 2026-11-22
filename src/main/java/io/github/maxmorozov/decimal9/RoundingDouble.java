@@ -8,10 +8,10 @@ package io.github.maxmorozov.decimal9;
  * <ul>
  *   <li>10^9 = 2^9 * 5^9, so the only real division is by D = 5^9 (a constant, compiled to a multiplication);
  *   <li>rounding is done by adding a correction and shifting: no branches on rem/half;
- *   <li>"sticky" is a plain boolean, the JIT chooses between a branch and cmov by the profile.
+ *   <li>The sticky bit is computed without a data-dependent conditional.
  * </ul>
  */
-public final class RoundingDouble {
+final class RoundingDouble {
     private static final int NANO_SCALE = 9;
 
     // 10^9 = 2^9 * 5^9  =>  W * 10^-9 = (W / 5^9) * 2^-9
@@ -46,7 +46,7 @@ public final class RoundingDouble {
      * @param lo the low 64 bits of the unsigned integer
      * @return the scaled double value
      */
-    public static double scaleToDouble(long hi, long lo) {
+    static double scaleToDouble(long hi, long lo) {
         if ((hi | (lo >>> PRECISION)) == 0) {
             // We start with a fast path
             // It was described in Clinger WD.
@@ -56,7 +56,7 @@ public final class RoundingDouble {
             return lo / 1e9;
         } else {
             // W has 54..93 bits
-            return toDoubleNanosBranchless(hi, lo);
+            return toDoubleNanos(hi, lo);
         }
     }
 
@@ -70,10 +70,12 @@ public final class RoundingDouble {
      * <p>Without anything the JIT can turn into a data-dependent branch: the leading zeros of the 128-bit W and the
      * sticky bit are computed arithmetically.
      */
-    private static double toDoubleNanosBranchless(long hi, long lo) {
+    private static double toDoubleNanos(long hi, long lo) {
         // Normalizing the 128-bit W = (hi:lo) to W' = (h:l) in [2^75; 2^76) by shifting left or right
         // by sh = bits - 76.
-        // W has bits = 54..93, so sh = bits - 76 lies in the range [-22; 17]
+        // W has bits = 54..93, so sh = bits - 76 lies in the range [-22; 17].
+        // Count leading zeros across the unsigned 128-bit value.
+        // If hi == 0, use the leading zeros of lo instead.
         int nlzHi = Long.numberOfLeadingZeros(hi);
         int nlz = nlzHi + (-(nlzHi >>> 6) & Long.numberOfLeadingZeros(lo));
         int sh = (128 - nlz) - NORM_BITS;
@@ -109,6 +111,8 @@ public final class RoundingDouble {
 
         // round-half-even with sticky: add = half - 1 + (m_odd | sticky), m = (q + add) >>> drop
         long half = 1L << (drop - 1);
+        // Round q / 2^drop to nearest, ties to even.
+        // sticky distinguishes an exact halfway case from a value above halfway.
         long add = half - 1 + (((q >>> drop) | sticky) & 1);
         long m = (q + add) >>> drop;
 

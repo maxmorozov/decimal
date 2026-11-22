@@ -22,7 +22,7 @@ public final class Decimal9Converter {
      * @throws IllegalArgumentException if {@code v} is NaN, infinite, or its magnitude is at least 2^63
      */
     public static Decimal9 fromDouble(double v) {
-        // NaN fails every comparison, so it passes this check and is rejected in getDecimal.
+        // NaN is handled by Schubfach and rejected in getDecimal().
         if (Math.abs(v) >= MAX_ABS_EXCLUSIVE) {
             throw new IllegalArgumentException("Value is not representable as Decimal: " + v);
         }
@@ -36,13 +36,8 @@ public final class Decimal9Converter {
     /**
      * Converts a {@link Decimal9} to the nearest {@code double} (round-half-even).
      *
-     * <p>A Decimal received from a client is client input: a service should catch the {@link IllegalArgumentException}
-     * and fail the call with {@code INVALID_ARGUMENT}, otherwise the framework reports it as {@code UNKNOWN}.
-     *
      * @param value the {@link Decimal9} value to convert
      * @return the double representation of the {@link Decimal9} value
-     * @throws IllegalArgumentException if {@code units} and {@code nanos} have different signs, or {@code nanos} is
-     *     outside [-999,999,999; 999,999,999]
      */
     public static double toDouble(Decimal9 value) {
         long units = value.units();
@@ -57,26 +52,26 @@ public final class Decimal9Converter {
 
         if (nanos == 0) {
             return units;
-        } else {
-            boolean negative = units < 0 || nanos < 0;
-            if (negative) {
-                units = -units;
-                nanos = -nanos;
-            }
-
-            // W = units * 10^9 + nanos as an unsigned 128-bit integer (hi:lo); value = W * 10^-9.
-            // W < 2^63 * 10^9 + 10^9 < 2^93, so it never overflows 128 bits.
-            long lo1 = units * NANOS_PER_UNIT;
-            long lo = lo1 + nanos;
-            long hi = Math.multiplyHigh(units, NANOS_PER_UNIT); // units >= 0: signed == unsigned
-            if (Long.compareUnsigned(lo, lo1) < 0) {
-                ++hi;
-            }
-
-            double v = scaleToDouble(hi, lo);
-
-            return negative ? -v : v;
         }
+
+        boolean negative = units < 0 || nanos < 0;
+        if (negative) {
+            units = -units;
+            nanos = -nanos;
+        }
+
+        // W = units * 10^9 + nanos as an unsigned 128-bit integer (hi:lo); value = W * 10^-9.
+        // W < 2^63 * 10^9 + 10^9 < 2^93, so it never overflows 128 bits.
+        long lo1 = units * NANOS_PER_UNIT;
+        long lo = lo1 + nanos;
+        long hi = Math.multiplyHigh(units, NANOS_PER_UNIT); // units >= 0: signed == unsigned
+        if (Long.compareUnsigned(lo, lo1) < 0) {
+            ++hi;
+        }
+
+        double v = scaleToDouble(hi, lo);
+
+        return negative ? -v : v;
     }
 
     private static Decimal9 getDecimal(DecimalEncoder encoder, EncodingResult type) {
